@@ -16,7 +16,7 @@ We define the following milestones for the project:
     - Narrow down the libraries we will use (starting with the shortlist below).
         * Richard will look at procex.
         * Chi-Cheng will look at shellmet. 
-        * 
+        * Sung-Yan will look at coquina.
         * 
     - Implement the interactive CLI and support for some/all predefined commands. At a minimum, the user should be able to echo back their input.
     - Add unit tests for the features.
@@ -49,8 +49,7 @@ We define the following milestones for the project:
 * Tanmay Gujar
 * Richard Gu
 * Chi-Cheng Lee
-* [Sung-Yan Hsieh](https://github.com/davidyen-888)
-
+* Sung-Yan Hsieh
 ## Architecture
 
 ## Challenges
