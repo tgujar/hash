@@ -15,7 +15,7 @@ We define the following milestones for the project:
 * Week of 11/19
     - Narrow down the libraries we will use (starting with the shortlist below).
         * Richard will look at procex.
-        * 
+        * Chi-Cheng will look at shellmet. 
         * 
         * 
     - Implement the interactive CLI and support for some/all predefined commands. At a minimum, the user should be able to echo back their input.
@@ -37,7 +37,6 @@ We define the following milestones for the project:
 * [brick](https://github.com/jtdaugherty/brick/)
 * [brick-filetree](https://hackage.haskell.org/package/brick-filetree-0.1.0.3#readme)
 * [shellmet](https://hackage.haskell.org/package/shellmet)
-* [Hish](https://hackage.haskell.org/package/Hish)
 * [coquina](https://hackage.haskell.org/package/coquina)
 * [procex](https://hackage.haskell.org/package/procex)
 
