@@ -14,6 +14,10 @@ Key features:
 We define the following milestones for the project:
 * Week of 11/19
     - Narrow down the libraries we will use (starting with the shortlist below).
+        * Richard will look at procex.
+        * 
+        * 
+        * 
     - Implement the interactive CLI and support for some/all predefined commands. At a minimum, the user should be able to echo back their input.
     - Add unit tests for the features.
 * Week of 11/26
