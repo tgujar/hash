@@ -6,7 +6,7 @@
 ## Library Usage
 * [brick](https://github.com/jtdaugherty/brick/)
 * [brick-filetree](https://hackage.haskell.org/package/brick-filetree-0.1.0.3#readme)
-* [hell](https://hackage.haskell.org/package/hell)
+* [shellmet](https://hackage.haskell.org/package/shellmet)
 * [Hish](https://hackage.haskell.org/package/Hish)
 * [coquina](https://hackage.haskell.org/package/coquina)
 * [procex](https://hackage.haskell.org/package/procex)
