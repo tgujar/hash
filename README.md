@@ -7,17 +7,18 @@
 Our objective is to implement a shell program in Haskell that supports history-based autocomplete, a la the [fish shell](https://fishshell.com/).
 Key features:
 * Provide an interactive CLI
-* Allow the user to run both predefined commands and arbitrary programs
+* Allow the user to run both predefined commands and arbitrary programs written in the fish language.
 * Provide the user with history-based autocomplete
 * Give the user suggestions after an invalid command
+* Customize the colors, prompt and environment vars for the shell using config files
 
 We define the following milestones for the project:
 * Week of 11/19
-    - Narrow down the libraries we will use (starting with the shortlist below).
+    - Narrow down the libraries we might use/refer  (starting with the shortlist below).
         * Richard will look at procex.
         * Chi-Cheng will look at shellmet. 
         * Sung-Yan will look at coquina.
-        * 
+        * Tanmay will look at brick
     - Implement the interactive CLI and support for some/all predefined commands. At a minimum, the user should be able to echo back their input.
     - Add unit tests for the features.
 * Week of 11/26
@@ -33,9 +34,8 @@ We define the following milestones for the project:
     - More testing.
     - Presentation prep.
 
-## Library Usage
+## Library Usage/ Library References
 * [brick](https://github.com/jtdaugherty/brick/)
-* [brick-filetree](https://hackage.haskell.org/package/brick-filetree-0.1.0.3#readme)
 * [shellmet](https://hackage.haskell.org/package/shellmet)
 * [coquina](https://hackage.haskell.org/package/coquina)
 * [procex](https://hackage.haskell.org/package/procex)
@@ -50,6 +50,7 @@ We define the following milestones for the project:
 * Richard Gu
 * Chi-Cheng Lee
 * Sung-Yan Hsieh
+
 ## Architecture
 
 ## Challenges
