@@ -5,7 +5,7 @@ module History (test) where
 
 import Data.Trie as Trie
 
-findMatches :: Trie -> String -> [String]
+
 
 test :: ()
 test = ()
