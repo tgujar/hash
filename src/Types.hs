@@ -18,14 +18,16 @@ type Variable = String
 type Store    = Map.Map Variable Value
 
 
-data Value 
+data Value
   = IntVal Int
   | FloatVal Float
   | BoolVal Bool
   | StrVal String
   deriving (Eq, Generic, Show)
 
-data Expression 
+
+
+data Expression
   = Var Variable
   | Val Value
   | Op  Bop Expression Expression
@@ -41,9 +43,10 @@ data Bop
   | Ge
   | Lt
   | Le
+  | IsEq
   deriving (Show)
 
-data Statement 
+data Statement
   = Assign   Variable   Expression
   | If       Expression Statement Statement
   | While    Expression Statement
