@@ -14,7 +14,7 @@ import qualified Data.Map as Map
 type Variable = String
 
 -- TO DO: Implement scoping
--- Stor should be a stack of Maps, where bottom of stack represents the global scope
+-- Store should be a stack of Maps, where bottom of stack represents the global scope
 type Store    = Map.Map Variable Value
 
 
