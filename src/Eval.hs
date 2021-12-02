@@ -67,66 +67,66 @@ eval (Op op e1 e2) = do
 --   semantics op v1@(IntVal _) v2@(IntVal _) = semantics op v1 v2
   
 -- TODO: Write better error messages
-semantics :: (MonadWhile m) => Bop -> Value -> Value -> m Value
-semantics Plus v1@(IntVal a) v2@(IntVal b)  = intOp (+) v1 v2
-semantics Plus v1@(FloatVal a) v2@(FloatVal b)  = floatOp (+) v1 v2
-semantics Plus v1@(StrVal a) v2@(StrVal b)  = strOp (++) v1 v2
+-- semantics :: (MonadWhile m) => Bop -> Value -> Value -> m Value
+-- semantics Plus v1@(IntVal a) v2@(IntVal b)  = intOp (+) v1 v2
+-- semantics Plus v1@(FloatVal a) v2@(FloatVal b)  = floatOp (+) v1 v2
+-- semantics Plus v1@(StrVal a) v2@(StrVal b)  = strOp (++) v1 v2
 
-semantics Times v1@(IntVal a) v2@(IntVal b) = intOp (*) v1 v2
-semantics Times v1@(FloatVal a) v2@(FloatVal b) = floatOp (*) v1 v2
--- semantics Times v1@(StrVal a) v2@(IntVal b) = strOp (foldr (++) "" $ replicate ) v1 v2
+-- semantics Times v1@(IntVal a) v2@(IntVal b) = intOp (*) v1 v2
+-- semantics Times v1@(FloatVal a) v2@(FloatVal b) = floatOp (*) v1 v2
+-- -- semantics Times v1@(StrVal a) v2@(IntVal b) = strOp (foldr (++) "" $ replicate ) v1 v2
 
-semantics Minus v1@(IntVal a) v2@(IntVal b) = intOp (-) v1 v2
-semantics Minus v1@(FloatVal a) v2@(FloatVal b) = floatOp (-) v1 v2
+-- semantics Minus v1@(IntVal a) v2@(IntVal b) = intOp (-) v1 v2
+-- semantics Minus v1@(FloatVal a) v2@(FloatVal b) = floatOp (-) v1 v2
 
-semantics Divide v1@(IntVal a) v2@(IntVal b) = intOp (div) v1 v2
-semantics Divide v1@(FloatVal a) v2@(FloatVal b) = floatOp (/) v1 v2
-
-
-semantics Gt (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 > v2)
-semantics Ge (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 >= v2)
-semantics Lt (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 < v2)
-semantics Le (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 <= v2)
-semantics IsEq  (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 == v2)
-
-semantics Gt (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 > v2)
-semantics Ge (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 >= v2)
-semantics Lt (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 < v2)
-semantics Le (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 <= v2)
-semantics IsEq (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 == v2)
-
-semantics Gt (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 > v2)
-semantics Ge (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 >= v2)
-semantics Lt (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 < v2)
-semantics Le (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 <= v2)
+-- semantics Divide v1@(IntVal a) v2@(IntVal b) = intOp (div) v1 v2
+-- semantics Divide v1@(FloatVal a) v2@(FloatVal b) = floatOp (/) v1 v2
 
 
-semantics Gt (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 >  fromIntegral v2)
-semantics Ge (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 >= fromIntegral  v2)
-semantics Lt (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 <  fromIntegral v2)
-semantics Le (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 <= fromIntegral  v2)
+-- semantics Gt (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 > v2)
+-- semantics Ge (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 >= v2)
+-- semantics Lt (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 < v2)
+-- semantics Le (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 <= v2)
+-- semantics IsEq  (IntVal v1) (IntVal v2)  = return $ BoolVal (v1 == v2)
 
-semantics Gt (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 > v2)
-semantics Ge (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 >= v2)
-semantics Lt (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 < v2)
-semantics Le (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 <= v2)
-semantics IsEq (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 == v2)
+-- semantics Gt (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 > v2)
+-- semantics Ge (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 >= v2)
+-- semantics Lt (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 < v2)
+-- semantics Le (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 <= v2)
+-- semantics IsEq (FloatVal v1) (FloatVal v2)  = return $ BoolVal (v1 == v2)
 
-semantics _ _ _ = throwError (StrVal "Types don't match")
+-- semantics Gt (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 > v2)
+-- semantics Ge (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 >= v2)
+-- semantics Lt (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 < v2)
+-- semantics Le (IntVal v1) (FloatVal v2)  = return $ BoolVal (fromIntegral v1 <= v2)
 
--- Take values out of monads and then check for division errors
-intOp :: (MonadWhile m) => (Int -> Int -> Int) -> Value -> Value -> m Value
-intOp div (IntVal v1) (IntVal v2) = if v2 == 0 then throwError (StrVal "Divide by zero") else return $ IntVal (v1 `div` v2)
-intOp op (IntVal v1) (IntVal v2) = return $ IntVal (v1 `op` v2)
-intOp _ _ _ = throwError (StrVal "Types don't match")
 
-floatOp :: (MonadWhile m) => (Float -> Float -> Float) -> Value -> Value -> m Value
-floatOp op (FloatVal v1) (FloatVal v2) = return $ FloatVal (v1 `op` v2)
-floatOp _ _ _ = throwError (StrVal "Types don't match")
+-- semantics Gt (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 >  fromIntegral v2)
+-- semantics Ge (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 >= fromIntegral  v2)
+-- semantics Lt (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 <  fromIntegral v2)
+-- semantics Le (FloatVal v1) (IntVal v2)  = return $ BoolVal (v1 <= fromIntegral  v2)
 
-strOp :: (MonadWhile m) => (String -> String -> String) -> Value -> Value -> m Value
-strOp op (StrVal v1) (StrVal v2) = return $ StrVal (v1 `op` v2) 
-strOp _ _ _ = throwError (StrVal "Types don't match")
+-- semantics Gt (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 > v2)
+-- semantics Ge (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 >= v2)
+-- semantics Lt (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 < v2)
+-- semantics Le (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 <= v2)
+-- semantics IsEq (StrVal v1) (StrVal v2)  = return $ BoolVal (v1 == v2)
+
+-- semantics _ _ _ = throwError (StrVal "Types don't match")
+
+-- -- Take values out of monads and then check for division errors
+-- intOp :: (MonadWhile m) => (Int -> Int -> Int) -> Value -> Value -> m Value
+-- intOp div (IntVal v1) (IntVal v2) = if v2 == 0 then throwError (StrVal "Divide by zero") else return $ IntVal (v1 `div` v2)
+-- intOp op (IntVal v1) (IntVal v2) = return $ IntVal (v1 `op` v2)
+-- intOp _ _ _ = throwError (StrVal "Types don't match")
+
+-- floatOp :: (MonadWhile m) => (Float -> Float -> Float) -> Value -> Value -> m Value
+-- floatOp op (FloatVal v1) (FloatVal v2) = return $ FloatVal (v1 `op` v2)
+-- floatOp _ _ _ = throwError (StrVal "Types don't match")
+
+-- strOp :: (MonadWhile m) => (String -> String -> String) -> Value -> Value -> m Value
+-- strOp op (StrVal v1) (StrVal v2) = return $ StrVal (v1 `op` v2) 
+-- strOp _ _ _ = throwError (StrVal "Types don't match")
 
 
 

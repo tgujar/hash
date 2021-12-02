@@ -19,8 +19,7 @@ type Store    = Map.Map Variable Value
 
 
 data Value
-  = IntVal Int
-  | FloatVal Float
+  = NumVal (Either Integer Double)
   | BoolVal Bool
   | StrVal String
   deriving (Eq, Generic, Show)
