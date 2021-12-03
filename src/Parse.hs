@@ -18,7 +18,7 @@ parens = P.parens lexer
 stringLiteral = P.stringLiteral lexer
 symbol = P.symbol lexer
 
-
+-- Using the module Text.Parsec.Expr to build an expression parser
 exprParser :: Parser H.Expression 
 exprParser = E.buildExpressionParser table term
 
@@ -34,8 +34,8 @@ str = H.Var <$> stringLiteral
 -- [binary "=" E.AssocRight]
 -- [binary "and" E.AssocLeft]
 -- [binary "or" E.AssocLeft]
-
-table = [[binary "^" E.AssocLeft]
+table = [[prefix "-", prefix "+"]
+        ,[binary "^" E.AssocLeft]
         ,[binary "*" E.AssocLeft
          ,binary "/" E.AssocLeft
          ,binary "%" E.AssocLeft]
@@ -43,11 +43,24 @@ table = [[binary "^" E.AssocLeft]
          ,binary "-" E.AssocLeft]
         ,[binary "<" E.AssocNone
          ,binary ">" E.AssocNone]
+        ,[binary "=" E.AssocRight]
+        ,[prefix "not"]
+        ,[binary "and" E.AssocLeft]
+        ,[binary "or" E.AssocLeft]
         ]
+        
   where
     binary name assoc =
         E.Infix (mkBinOp name <$ symbol name) assoc
     mkBinOp nm a b = H.Op (binOpMapping nm) a b
+    prefix name =
+        E.Prefix (mkPrefixOp name <$ symbol name)
+    mkPrefixOp nm a = H.PrefixOp (prefixOpMapping nm) a
+
+prefixOpMapping :: [Char] -> PrefixOp
+prefixOpMapping "+" = Pos
+prefixOpMapping "-" = Neg
+prefixOpMapping "not" = Not
 
 binOpMapping :: [Char] -> Bop
 binOpMapping "+" = (Plus)
@@ -71,6 +84,62 @@ parseFromString p s = runParser p () "DUMMY" s
 -- >>> parseFromString exprParser "1 + 2 + 3"
 -- Right (Op Plus (Op Plus (Val (NumVal (Left 1))) (Val (NumVal (Left 2)))) (Val (NumVal (Left 3))))
 --
+
+-----------------------------------test for prefix operator -------------------------------------------------
+-- >>> parseFromString exprParser "not 1"
+-- Right (PrefixOp Not (Val (NumVal (Left 1))))
+--
+
+-- >>> parseFromString exprParser "-1+4"
+-- Right (Op Plus (PrefixOp Neg (Val (NumVal (Left 1)))) (Val (NumVal (Left 4))))
+--
+
+-- >>> parseFromString exprParser "1+2*3>4"
+-- Right (Op Gt (Op Plus (Val (NumVal (Left 1))) (Op Times (Val (NumVal (Left 2))) (Val (NumVal (Left 3))))) (Val (NumVal (Left 4))))
+--
+
+-------------------------------------------------------------------------------------------------------------
+
+lexeme :: Parser a -> Parser a
+lexeme p = do
+           x <- p
+           P.whiteSpace lexer
+           return x
+
+stringToken :: Parser String
+stringToken = lexeme (char '\'' *> manyTill anyChar (char '\''))
+
+stringLit :: Parser H.Expression
+stringLit =  H.Val . H.StrVal <$> stringToken
+
+term1 :: Parser H.Expression
+term1 = num <|> parens exprParser <|> stringLit
+
+-- Handling parsing strings by using module Text.Parsec.String
+stringParser :: Parser H.Expression
+stringParser = E.buildExpressionParser table term1
+
+-----------------------------------test for string parser-----------------------------------------------------
+-- >>> parseFromString stringParser "'hello'"
+-- Right (Val (StrVal "hello"))
+--
+
+-- >>> parseFromString stringParser "'(123)=_*&^%$#@!'"
+-- Right (Val (StrVal "(123)=_*&^%$#@!"))
+--
+
+
+-- TODO: Handling error messages
+parseError :: Parsec String () a -> String -> Either ParseError a
+parseError p s = parse (p <* eof) "Error" s
+
+--- >>> parseError exprParser "3/0"
+--- Right (Op Divide (Val (NumVal (Left 3))) (Val (NumVal (Left 0))))
+---
+
+
+
+
 
 -- -------------------------------------------------------------------------------
 -- -- | Parsing Constants

@@ -30,8 +30,14 @@ data Expression
   = Var Variable
   | Val Value
   | Op  Bop Expression Expression
+  | PrefixOp PrefixOp Expression
   deriving (Show)
 
+data PrefixOp
+  = Not 
+  | Neg 
+  | Pos
+  deriving (Show)
 
 data Bop 
   = Plus
@@ -54,6 +60,12 @@ data Statement
   | Print    Expression 
   deriving (Show)
 
+-- for error messages
+data Message 
+  = SysUnExpect String
+  | UnExpect String
+  | Expect String
+  | Message String
 
 ----------------------------------------------------------------------------------------------
 -- | `WState` is the "State" maintained by the interpreter's State-Transformer Monad
