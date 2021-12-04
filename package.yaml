@@ -26,11 +26,16 @@ dependencies:
 - containers
 - QuickCheck
 - mtl
+- bytestring >= 0.10
+- utf8-string >= 1.0.2
 
 library:
   source-dirs: src
   dependencies:
   - bytestring-trie >= 0.2.6
+  - mtl
+  - bytestring >= 0.10
+  - utf8-string >= 1.0.2
 
 executables:
   hash-exe:
