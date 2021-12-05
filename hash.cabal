@@ -25,8 +25,13 @@ source-repository head
 
 library
   exposed-modules:
+      CSE230.Fold
+      CSE230.While.Eval
+      CSE230.While.Parse
+      CSE230.While.Types
       Lib
       Types
+      While
   other-modules:
       Paths_hash
   hs-source-dirs:
