@@ -170,6 +170,30 @@ seqP = do
 statementP :: Parser H.Statement
 statementP = choice [try(seqP), assignP, ifP, whileP, skipP]
 
+{-
+ZACK:
+
+cdP :: Parser H.Statement
+cdP = do
+   string "cd"
+   whitespace
+   e <- exprP
+
+pwdP :: Parser H.Statement
+pwdP = do
+   string "pwd"
+
+lsP :: Parser H.Statement
+lsP = do
+   string "ls"
+
+echoP :: Parser H.Statement
+echoP = do
+   String "echo"
+   whitespace
+   e <- exprP
+-}
+
 
 -- When you are done, we can put the parser and evaluator together 
 -- in the end-to-end interpreter function `runFile` in `Main.hs`
