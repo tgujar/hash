@@ -128,16 +128,92 @@ stringParser = E.buildExpressionParser table term1
 -- Right (Val (StrVal "(123)=_*&^%$#@!"))
 --
 
+--------------------------------------------------------------------------------------------------------------
 
 -- TODO: Handling error messages
 parseError :: Parsec String () a -> String -> Either ParseError a
 parseError p s = parse (p <* eof) "Error" s
 
+-----------------------------------test for error parser------------------------------------------------------
+
 --- >>> parseError exprParser "3/0"
 --- Right (Op Divide (Val (NumVal (Left 3))) (Val (NumVal (Left 0))))
 ---
 
+--- >>> parseError exprParser "hello"
+--- Left "Error" (line 1, column 1):
+--- unexpected "h"
+--- expecting number, literal string or "("
+---
 
+-- -------------------------------------------------------------------------------
+-- -- | Parsing Statements 
+-- -------------------------------------------------------------------------------
+
+keywords :: [String]    
+keywords = ["if", "then", "else", "let", "in", "true", "false", "not", "and", "or", "print"]
+
+identifier :: Parser String
+identifier = (lexeme . try) (p >>= check)
+  where
+    p = (:) <$> letter <*> many alphaNum
+    check x = if x `elem` keywords
+                then fail $ "keyword " ++ show x ++ " cannot be an identifier"
+                else return x
+
+stmt :: Parser H.Statement
+stmt = choice [
+        H.Assign <$> identifier <*> (lexeme (char '=') *> exprParser)
+        ,H.If <$> (lexeme (string "if") *> exprParser) <*> (lexeme (string "then") *> stmt) <*> (lexeme (string "else") *> stmt)
+        ,H.While <$> (lexeme (string "while") *> exprParser) <*> (lexeme (string "do") *> stmt)
+        ,H.Skip <$ (lexeme (string "skip"))
+        ]
+stmtParser :: Parser H.Statement
+stmtParser = try sequenceP <|> try assignP <|> try ifP <|> try whileP <|> try skipP
+
+assignP :: Parser H.Statement
+assignP = do
+    var <- identifier
+    lexeme (char '=')
+    expr <- exprParser
+    return $ H.Assign var expr
+
+
+-- parser for If statement
+ifP :: Parsec String () H.Statement
+ifP = do
+    P.reserved lexer "if"
+    cond <- exprParser
+    P.reserved lexer "else"
+    stmt1 <- stmt
+    P.reserved lexer "end"
+    stmt2 <- stmt
+    return $ H.If cond stmt1 stmt2
+
+whileP :: Parsec String () H.Statement
+whileP = do
+    P.reserved lexer "while"
+    cond <- exprParser
+    P.reserved lexer ";"
+    stmt1 <- stmt
+    P.reserved lexer "end"
+    stmt2 <- stmt
+    return $ H.While cond stmt1
+
+sequenceP :: Parser H.Statement
+sequenceP = do
+    try assignP <|> try ifP <|> try whileP <|> try skipP
+
+skipP :: Parser H.Statement
+skipP = do
+    P.reserved lexer "skip"
+    return $ H.Skip
+
+echoP :: Parser H.Statement
+echoP = do
+    P.reserved lexer "print"
+    expr <- exprParser
+    return $ H.Print expr
 
 
 

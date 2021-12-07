@@ -25,7 +25,7 @@ readVar x = do
   WS s _ <- get 
   case Map.lookup x s of
     Just v  -> return v
-    Nothing -> throwError (IntVal 0)
+    Nothing -> throwError $ error $ "Variable " ++ show x ++ " not found"
 
 ----------------------------------------------------------------------------------------------
 -- | `writeVar x v` updates the value of `x` in the store to `v`
@@ -53,6 +53,26 @@ eval (Op op e1 e2) = do
   v2 <- eval e2
   semantics op v1 v2
 
+
+-- TODO: fix errors in type matching, Use FlexibleContexts?
+semantics :: (MonadWhile m) => Bop -> Value -> Value -> m Value
+semantics Plus (NumVal n1) (NumVal n2) = return $ NumVal (n1 + n2)
+semantics Minus (NumVal n1) (NumVal n2) = return $ NumVal (n1 - n2)
+semantics Times (NumVal n1) (NumVal n2) = return $ NumVal (n1 * n2)
+semantics Divide (NumVal n1) (NumVal n2) = return $ NumVal (n1 `div` n2)
+semantics Gt  (NumVal n1) (NumVal n2) = return $ BoolVal (n1 > n2)
+semantics Ge (NumVal n1) (NumVal n2) = return $ BoolVal (n1 >= n2)
+semantics Lt  (NumVal n1) (NumVal n2) = return $ BoolVal (n1 < n2)
+semantics Le (NumVal n1) (NumVal n2) = return $ BoolVal (n1 <= n2)
+semantics _ _ _ = throwError (StrVal "Types don't match")
+
+
+--- >>> eval (Op Plus (Val (NumVal 1)) (Val (NumVal 2)))
+
+
+
+
+------------------------------------legacy code before introducing NumVal-----------------------------------------------
 -- class Operations a where
 --   (+), (-), (==), (<=), (>=), (<), (>), div, (/), (*) :: Value -> Value -> m Value
 
@@ -140,14 +160,14 @@ evalS (If e s1 s2) = do
   case val of
     (BoolVal True) -> evalS s1
     (BoolVal False) -> evalS s2
-    _ -> throwError (IntVal 2)
+    _ -> throwError (StrVal "Type error")
 
 evalS (While e s) = do
   val <- eval e
   case val of
     (BoolVal True) -> do {evalS s; evalS (While e s)}
     (BoolVal False) -> return ()
-    _               -> throwError (IntVal 2)      
+    _               -> throwError (StrVal "Type error")  
 
 evalS (Sequence s1 s2) = do
   evalS s1
