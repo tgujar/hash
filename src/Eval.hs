@@ -9,6 +9,7 @@ import           Control.Monad.State
 import           Control.Monad.Except
 import           Control.Monad.Identity
 import           Types
+import           Turtle
 
 ----------------------------------------------------------------------------------------------
 -- | A Combined monad that is BOTH 
@@ -175,7 +176,24 @@ evalS (Sequence s1 s2) = do
 
 evalS Skip = return ()
 
-evalS (Print e) = do
+-- evalS (Print e) = do
+--   val <- eval e
+--   printString $ show val
+
+-- TODO: Reimplement with using turtle functions
+evalS (Cd e) = do
+  val <- eval e
+  case val of
+    (StrVal s) -> error "Not implemented"
+    _ -> throwError (StrVal "Type error")
+
+evalS (Pwd) = do
+  printString "pwd"
+
+evalS (Ls) = do
+  printString "ls"
+
+evalS (Echo e) = do
   val <- eval e
   printString $ show val
   

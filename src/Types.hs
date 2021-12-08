@@ -10,7 +10,6 @@ import           GHC.Exts
 import           GHC.Generics
 import qualified Data.Map as Map
 
-
 type Variable = String
 
 -- TO DO: Implement scoping
@@ -58,6 +57,10 @@ data Statement
   | Sequence Statement  Statement
   | Skip
   | Print    Expression 
+  | Cd       Expression
+  | Pwd 
+  | Ls  
+  | Echo     Expression
   deriving (Show)
 
 -- for error messages

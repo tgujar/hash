@@ -5,9 +5,9 @@ import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Language (emptyDef)
 
-
 import Types as H
 import qualified Text.Parsec.Expr as E
+-- import Turtle   -- if import Turtle will change currently implemented parser
 
 
 lexer       = P.makeTokenParser emptyDef 
@@ -209,12 +209,26 @@ skipP = do
     P.reserved lexer "skip"
     return $ H.Skip
 
+-- implementation of Zack's pseodo-parser
+
+cdP :: Parser H.Statement
+cdP = error "not implemented"
+
+pwdP :: Parser H.Statement
+pwdP = do
+    P.reserved lexer "pwd"
+    return $ H.Pwd
+
 echoP :: Parser H.Statement
 echoP = do
     P.reserved lexer "print"
     expr <- exprParser
     return $ H.Print expr
 
+lsP :: Parser H.Statement
+lsP = do
+    P.reserved lexer "ls"
+    return $ H.Ls
 
 
 -- -------------------------------------------------------------------------------
