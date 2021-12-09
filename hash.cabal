@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      ConsolePrompt
       History
       Lib
       Types
@@ -38,8 +39,10 @@ library
     , bytestring >=0.10
     , bytestring-trie >=0.2.6
     , containers
+    , haskeline >=0.8.2
     , mtl
     , parsec
+    , transformers >=0.5.6.2
     , utf8-string >=1.0.2
   default-language: Haskell2010
 
@@ -57,8 +60,10 @@ executable hash-exe
     , bytestring-trie >=0.2.6
     , containers
     , hash
+    , haskeline >=0.8.2
     , mtl
     , parsec
+    , transformers >=0.5.6.2
     , utf8-string >=1.0.2
   default-language: Haskell2010
 
@@ -77,7 +82,9 @@ test-suite hash-test
     , bytestring-trie >=0.2.6
     , containers
     , hash
+    , haskeline >=0.8.2
     , mtl
     , parsec
+    , transformers >=0.5.6.2
     , utf8-string >=1.0.2
   default-language: Haskell2010
