@@ -79,7 +79,15 @@ flagParser = do
 
 -- Statement Parser
 stmtParser :: Parser H.Statement
-stmtParser = try funcP <|> try blockP <|> try sequenceP <|> try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> returnP
+stmtParser = try funcP 
+    <|> try blockP 
+    <|> try sequenceP 
+    <|> try assignP 
+    <|> try ifelseP 
+    <|> try whileP 
+    <|> try skipP 
+    <|> try echoP 
+    <|> returnP
 
 -- Statement Type parsers
 -- Functions have the following syntax
@@ -108,13 +116,13 @@ funcP = do
 -- Right (Sequence (Assign "z" [Scope 'l'] (Op Plus (Var "x") (Var "y"))) (Assign "z" [Scope 'l'] (Op Plus (Var "x") (Var "y"))))
 --
 
--- synatx for assignments is same as https://fishshell.com/docs/current/cmds/set.html?highlight=set
+-- syntax for assignments is same as https://fishshell.com/docs/current/cmds/set.html?highlight=set
 assignP :: Parser H.Statement
 assignP = do
     _ <- P.symbol lexer "set"
     flags <- optionMaybe flagParser
     spaces
-    (H.Var v) <- var
+    v <- P.identifier lexer
     e <- exprParser
     case flags of
         Nothing -> return $ H.Assign v [] e
@@ -170,12 +178,18 @@ echoP = do
     _ <- P.lexeme lexer $ string "echo"
     H.Print <$> exprParser
 
+
+{--
+The syntax uses ";" for new lines and avoids using newline characters as seperator between statements.
+It so happens that lexeme consumes newlines as well and I was too deep to go back and change evrything
+so that the lang could support newlines as well.
+--}
 sequenceP :: Parser H.Statement
 sequenceP = do
     s1 <- try funcP <|> try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> echoP
-    P.lexeme lexer (try (char '\n') <|> try (char ';'))
+    P.lexeme lexer (char ';')
     s2 <- stmtParser
-    optional $ P.lexeme lexer (try (char '\n') <|> try (char ';'))
+    optional $ P.lexeme lexer (char ';')
     return $ H.Sequence s1 s2
 
 
