@@ -23,16 +23,19 @@ data Value
   | StrVal String
   deriving (Eq, Generic, Show)
 
-
+data Flag
+  = Scope Char  -- flags for scope as defined here https://fishshell.com/docs/current/cmds/set.html?highlight=set
+  | Operation Char
+  deriving (Show)
 
 data Expression
   = Var Variable
   | Val Value
   | Op  Bop Expression Expression
-  | PrefixOp PrefixOp Expression
+  | PrefixOp Prefop Expression
   deriving (Show)
 
-data PrefixOp
+data Prefop
   = Not 
   | Neg 
   | Pos
@@ -48,19 +51,20 @@ data Bop
   | Lt
   | Le
   | IsEq
+  | And
+  | Or
   deriving (Show)
 
 data Statement
-  = Assign   Variable   Expression
+  = Assign   Variable [Flag] Expression
   | If       Expression Statement Statement
   | While    Expression Statement
   | Sequence Statement  Statement
   | Skip
   | Print    Expression 
-  | Cd       Expression
-  | Pwd 
-  | Ls  
-  | Echo     Expression
+  | Function [Variable] Statement
+  | Return   Expression
+  | Block    Statement
   deriving (Show)
 
 -- for error messages
