@@ -74,14 +74,15 @@ data Statement
   | Return   Expression
   | Block    Statement
   | External Command Args
+  | Error    
   deriving (Show)
 
--- for error messages
-data Message 
-  = SysUnExpect String
-  | UnExpect String
-  | Expect String
-  | Message String
+-- -- for error messages
+-- data Message 
+--   = SysUnExpect String
+--   | UnExpect String
+--   | Expect String
+--   | Message String
 
 ----------------------------------------------------------------------------------------------
 -- | `WState` is the "State" maintained by the interpreter's State-Transformer Monad
