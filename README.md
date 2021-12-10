@@ -53,6 +53,9 @@ We define the following milestones for the project:
 We divided the project into four main parts: Parser, Evaluator, History, and the REPL.
 
 * Parser
+    - Core Design
+         
+        The basic implementation of the design of parser is based on the parse.hs in hw2. Since the parser in the homework has limited supporting types, we define the types and functions such as if..else, while loops, comment block supports, set builtin, commands for "cd" and "echo" and prefix and infix operators.
 
 * Evaluator
 
@@ -88,7 +91,8 @@ We divided the project into four main parts: Parser, Evaluator, History, and the
     One of the things that Haskeline does by default is the automatic adding of user input to its internal history log. I had to turn this off and add to the history explicitly because we didn't want to save invalid inputs.
 
 ## Challenges
-* See Richard's report below for his thoughts
+* See everyone's report below for their thoughts
+
 
 ## (Late) Milestone Report (Richard)
 
@@ -141,3 +145,24 @@ Thus, I decided to design the implementation and write the psuedo codes for my t
 
 Eventually, even though I figured out how the library could be utilized, my teammates found another way that required less work and decided not to use Turtle.
 I think the main challange for me was to find out the way that helped my teammates work less, and I didn't do a great job. Maybe I should have communicated and discussed more about the details with my teammates, so we would have saved more time and also avoid repetitive work.
+
+
+## (Late) Milestone Report (Sung-Yan)
+
+* Week of 11/19
+    - Checking out the libraries, and realized that we would not use the libraries we choosed previously.
+* Week of 11/26
+    - Understanding fish shell syntax and its supporting types.
+    - Working on the hw3, which serves as the base of evaluator in our project.
+* Week of 12/3
+    - Looking into parsec library.
+    - Constructed prototype for parser and evaluator(adding prefix and infix operator supporting, if, while, echo and string parsing functions). 
+* Week of 12/10
+    - Working on the implementation for the Turtle library usage.(We didn't use it at last.)
+    - Fixing on operator supporting in evaluator.
+    - Add the statement parsers that matches the syntax in FISH by using parsec library.
+    - Add unit tests on parser.
+
+I collaborated with Tanmay for working on the evaluator and parser. We introduced a lot of usage on Parsec library, which allows us to realize the functionality similar to FISH shell. The concept of our working type is that I create the first version of the implementation of both files, then Tanmay glued up and devised them and add more features, and I keep working on top of them and so on. 
+
+One of my challenges is handling the errors for parser, I was unable to apply the [Parsec.Error](https://hackage.haskell.org/package/parsec-3.1.15.0/docs/Text-Parsec-Error.html) library into our project due to limited time. We somehow removed other feature such as function parsing also but the basic expectation of shell was completed. The greatest challenges for me is the time allocation for the project, I should take more time working on the project before the final week. Since Richard's feature is based on the completion of evaluator and parser, the timeline for supporting basic predefined commands is far from our expectation, this lead to the soaring workload for everyone in the last week of project. Besides, I failed on integrating Chi-Cheng's Turtle library idea, the better integration would also be solved by the timing of working on the project.
