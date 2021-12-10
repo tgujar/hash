@@ -66,16 +66,19 @@ bool = H.Val . H.BoolVal <$> do {
 
 -- Flag Parser for "set" command
 -- for set of flags refer https://fishshell.com/docs/current/cmds/set.html?highlight=set
-scope :: Parser H.Flag
-scope = H.Scope <$> oneOf "lgU"
+scope :: Parser H.RefScope 
+scope = do
+    f <- oneOf "lgU"
+    case f of
+        'l' -> return Local
+        'g' -> return Global 
+        _ -> return Universal 
 
-operation :: Parser H.Flag
-operation = H.Operation <$> oneOf "qes"
 
-flagParser :: ParsecT String () Data.Functor.Identity.Identity [Flag]
+flagParser :: ParsecT String () Data.Functor.Identity.Identity RefScope 
 flagParser = do
     _ <- char '-'
-    many1 (try operation <|> try scope)
+    scope
 
 -- Statement Parser
 stmtParser :: Parser H.Statement
@@ -132,7 +135,7 @@ assignP = do
     v <- P.identifier lexer
     e <- exprParser
     case flags of
-        Nothing -> return $ H.Assign v [] e
+        Nothing -> return $ H.Assign v Local e
         (Just f) -> return $ H.Assign v f e
 
 blockP :: Parser H.Statement

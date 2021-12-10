@@ -14,9 +14,12 @@ type Variable = String
 
 -- TO DO: Implement scoping
 -- Store should be a stack of Maps, where bottom of stack represents the global scope
-type Store    = Map.Map Variable Value
+-- First element is top of stack
+type ScopeVars    = Map.Map Variable Value
+type Store    = [ScopeVars]
 type Command  = String
 type Args     = [String]
+
 
 
 data Value
@@ -31,10 +34,7 @@ instance Show Value where
   show (StrVal s) = show s
   show (BoolVal b) = show b
 
-data Flag
-  = Scope Char  -- flags for scope as defined here https://fishshell.com/docs/current/cmds/set.html?highlight=set
-  | Operation Char
-  deriving (Show)
+data RefScope = Global | Universal | Local deriving(Show)  -- flags for scope as defined here https://fishshell.com/docs/current/cmds/set.html?highlight=set
 
 data Expression
   = Var Variable
@@ -64,7 +64,7 @@ data Bop
   deriving (Show)
 
 data Statement
-  = Assign   Variable [Flag] Expression
+  = Assign   Variable RefScope Expression
   | If       Expression Statement Statement
   | While    Expression Statement
   | Sequence Statement  Statement
@@ -98,4 +98,4 @@ type Log      = [String]
 
 -- | `initStore` is the empty state (all variables undefined), log is empty
 initStore :: Store  
-initStore = Map.empty
+initStore = [Map.empty]
