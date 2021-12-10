@@ -198,8 +198,6 @@ evalS (HashFile f) = do
   check <- liftIO $ doesFileExist f
   if check then liftIO $ runFile f else throwError $ StrVal "No such file"
 
-
-
 -- setFunction :: (MonadWhile m) => RefScope -> Variable -> m ()
 -- setFunction sc v = do
 --   val <- readVar' sc v
@@ -266,7 +264,7 @@ runCmd str state = do
 --
 
 -- Run a Hash script
-runFile :: FilePath -> IO ()
+runFile :: FilePath -> IO () -- currently does not actually persist state I think
 runFile s = do
   p <- parseFromFile P.stmtParser s
   case p of
@@ -285,6 +283,75 @@ printParsed s = do
 --
 
 -- >>> runFile "test/test.hash"
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "\"Hello world\""
+-- "0"
+--
+
+-- *** unit tests for runCmd and runFile ***
+
+-- manually examine output of runCmd to see that it lists out the directory contents correctly
+-- >>> runCmd "ls" (WS initStore [] "")
+-- ChangeLog.md
+-- LICENSE
+-- README.md
+-- Setup.hs
+-- app
+-- dist
+-- hash.cabal
+-- package.yaml
+-- src
+-- stack.yaml
+-- stack.yaml.lock
+-- test
+--
+
+listsEq :: Eq a => [a] -> [a] -> Bool
+listsEq [] [] = True
+listsEq [] _ = False
+listsEq _ [] = False
+listsEq (x:xs) (y:ys) = (x == y) && listsEq xs ys
+
+-- runs the given command and checks that the resulting eval state is as expected
+runCmdCheckStore :: String -> WState -> WState -> IO Bool
+runCmdCheckStore cmd initialState (WS expectedStore expectedLog expectedPath) = do
+  (b, WS store log path) <- runCmd cmd initialState
+  let
+    -- res = listsEq store expectedStore && listsEq log expectedLog && (path == expectedPath)
+    res1 = listsEq store expectedStore
+    res2 = listsEq log expectedLog
+    res3 = path == expectedPath
+    res = res1 && res2 && res3
+  -- print store
+  -- print log
+  -- print res1
+  -- print res2
+  -- print res3
+  return res
+
+-- >>> runCmdCheckStore "set cat 5" (WS initStore [] "") (WS [M.fromList [("cat", NumVal (Left 5))]] [] "")
+-- True
+--
+
+-- >>> runCmdCheckStore "set dog 3; echo $dog + 5" (WS initStore [] "") (WS [M.fromList [("dog", NumVal (Left 3))]] ["8"] "")
+-- "8"
+-- True
+--
+
+-- runFile is kinda weird...
+expectedStore :: Store
+expectedStore = [M.empty] -- [M.fromList [("X", NumVal (Left 0)), ("Y", NumVal (Left 3)), ("Z", NumVal (Left 3))]]
+expectedLog :: Log
+expectedLog = [] -- concat (replicate 10 ["\"Hello world\"", "\"Hello I am still awake\""]) ++ ["0"]
+-- >>> runCmdCheckStore "hash \"test/test.hash\"" (WS initStore [] "") (WS expectedStore expectedLog "")
 -- "\"Hello world\""
 -- "\"Hello I am still awake\""
 -- "\"Hello world\""
@@ -306,4 +373,10 @@ printParsed s = do
 -- "\"Hello world\""
 -- "\"Hello I am still awake\""
 -- "0"
+-- [fromList []]
+-- True
+-- True
+-- True
+-- True
 --
+

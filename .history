@@ -1,3 +1,7 @@
+echo $cat
+set cat 3
+echo $cat
+set -g cat 5
 hi
 cd
 ls
