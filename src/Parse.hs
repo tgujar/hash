@@ -9,6 +9,7 @@ import Lang as L
 import qualified Control.Monad.Identity as Data.Functor.Identity
 import Text.Parsec.Token (GenTokenParser(identifier))
 import qualified Test.QuickCheck.Function as H
+import Text.Parsec.Error (messageString, Message(..), errorMessages)
 
 lexer       = P.makeTokenParser L.hashLangDef
 
@@ -66,28 +67,29 @@ bool = H.Val . H.BoolVal <$> do {
 
 -- Flag Parser for "set" command
 -- for set of flags refer https://fishshell.com/docs/current/cmds/set.html?highlight=set
-scope :: Parser H.Flag
-scope = H.Scope <$> oneOf "lgU"
+scope :: Parser H.RefScope 
+scope = do
+    f <- oneOf "lgU"
+    case f of
+        'l' -> return Local
+        'g' -> return Global 
+        _ -> return Universal 
 
-operation :: Parser H.Flag
-operation = H.Operation <$> oneOf "qes"
 
-flagParser :: ParsecT String () Data.Functor.Identity.Identity [Flag]
+flagParser :: ParsecT String () Data.Functor.Identity.Identity RefScope 
 flagParser = do
     _ <- char '-'
-    many1 (try operation <|> try scope)
+    scope
 
 -- Statement Parser
 stmtParser :: Parser H.Statement
-stmtParser = try funcP 
-    <|> try blockP 
+stmtParser = try blockP 
     <|> try sequenceP 
     <|> try assignP 
     <|> try ifelseP 
     <|> try whileP 
     <|> try skipP 
     <|> try echoP 
-    <|> try returnP
     <|> externP
 
 -- Statement Type parsers
@@ -104,11 +106,12 @@ externP = do
     ext <- sepBy1 (many1 (alphaNum <|> oneOf "~/-.")) spaces
     return $ H.External (head ext) (tail ext)
 
-funcP :: Parser H.Statement
-funcP = do
-    _ <- P.reservedOp lexer "function"
-    vars <- P.parens lexer $ P.commaSep lexer (P.identifier lexer)
-    H.Function vars <$> stmtParser
+-- Parser for function syntax
+-- funcP :: Parser H.Statement
+-- funcP = do
+--     _ <- P.reservedOp lexer "function"
+--     vars <- P.parens lexer $ P.commaSep lexer (P.identifier lexer)
+--     H.Function vars <$> stmtParser
 
 -- >>> parseFromString stmtParser "ls -la ~/tgujar"
 -- Right (External "ls" ["-la","~/tgujar"])
@@ -132,7 +135,7 @@ assignP = do
     v <- P.identifier lexer
     e <- exprParser
     case flags of
-        Nothing -> return $ H.Assign v [] e
+        Nothing -> return $ H.Assign v Local e
         (Just f) -> return $ H.Assign v f e
 
 blockP :: Parser H.Statement
@@ -162,11 +165,11 @@ ifelseP = do
     falseSt <- P.braces lexer stmtParser
     return $ H.If test trueSt falseSt
 
-
-returnP :: Parser H.Statement
-returnP = do
-    _ <- P.symbol lexer "return"
-    H.Return <$> exprParser
+-- Parser for the return statement of the funtion
+-- returnP :: Parser H.Statement
+-- returnP = do
+--     _ <- P.symbol lexer "return"
+--     H.Return <$> exprParser
 
 whileP :: Parser H.Statement
 whileP = do
@@ -184,7 +187,15 @@ echoP :: Parser H.Statement
 echoP = do
     _ <- P.lexeme lexer $ string "echo"
     H.Print <$> exprParser
+    
 
+-- Reference for Text.Parsec.Error: https://hackage.haskell.org/package/parsec-3.1.15.0/docs/Text-Parsec-Error.html
+errorP :: Parser H.Statement
+-- errorP e = "Parse error at " ++ show (errorPos e) ++ ": " ++ show (errorMessages e)
+-- errorP e = error $ "Parse error at " ++ show e
+errorP = do
+    _ <- P.lexeme lexer $ string "error"
+    return $ H.Error
 
 {--
 The syntax uses ";" for new lines and avoids using newline characters as seperator between statements.
@@ -193,36 +204,42 @@ so that the lang could support newlines as well.
 --}
 sequenceP :: Parser H.Statement
 sequenceP = do
-    s1 <- try funcP <|> try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> try returnP <|> externP
+    s1 <- try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> externP
     P.lexeme lexer (char ';')
     s2 <- stmtParser
     optional $ P.lexeme lexer (char ';')
     return $ H.Sequence s1 s2
 
 
+parseFromStringIO :: Parser a -> String -> IO (Either ParseError a)
+parseFromStringIO p s = return $ runParser p () "Parse Error" s
 
 parseFromString :: Parser a -> String -> Either ParseError a
-parseFromString p = runParser p () "Error"
+parseFromString p = runParser p () "Parse Error"
 
 -----------------------------------test for string parser-----------------------------------------------------
--- >>> parseFromString exprParser "$cat"
+-- >>> parseFromString exprParser "cat"
 -- Right (Var "cat")
 --
 
 -- >>> parseFromString exprParser "\"cat\""
--- Right (Val (StrVal "cat"))
+-- Right (Val "cat")
 --
 
 -- >>> parseFromString exprParser "(123)=_*&^%$#@!'"
--- Right (Val (NumVal (Left 123)))
+-- Right (Val 123)
 --
 
 -- >>> parseFromString exprParser "2+(3*4-3)/2"
--- Right (Op Plus (Val (NumVal (Left 2))) (Op Divide (Op Minus (Op Times (Val (NumVal (Left 3))) (Val (NumVal (Left 4)))) (Val (NumVal (Left 3)))) (Val (NumVal (Left 2)))))
+-- Right (Op Plus (Val 2) (Op Divide (Op Minus (Op Times (Val 3) (Val 4)) (Val 3)) (Val 2)))
 --
 
 -- >>> parseFromString exprParser "28%5"
--- Right (Op Divide (Val (NumVal (Left 28))) (Val (NumVal (Left 5))))
+-- Right (Op Divide (Val 28) (Val 5))
+--
+
+-- >>> parseFromString exprParser "-5>=2"
+-- Right (Op Ge (PrefixOp Neg (Val 5)) (Val 2))
 --
 
 -- >>> parseFromString exprParser "not $cat"
@@ -239,15 +256,15 @@ parseFromString p = runParser p () "Error"
 
 -----------------------------------test for operator -------------------------------------------------
 -- >>> parseFromString exprParser "1.2 + 3.4"
--- Right (Op Plus (Val (NumVal (Right 1.2))) (Val (NumVal (Right 3.4))))
+-- Right (Op Plus (Val 1.2) (Val 3.4))
 --
 
 -- >>> parseFromString exprParser "-1+4"
--- Right (Op Plus (PrefixOp Neg (Val (NumVal (Left 1)))) (Val (NumVal (Left 4))))
+-- Right (Op Plus (PrefixOp Neg (Val 1)) (Val 4))
 --
 
 -- >>> parseFromString exprParser "\"cat\" + \"dog\""
--- Right (Op Plus (Val (StrVal "cat")) (Val (StrVal "dog")))
+-- Right (Op Plus (Val "cat") (Val "dog"))
 --
 
 -- >>> parseFromString exprParser "$cat + $dog"
@@ -256,27 +273,41 @@ parseFromString p = runParser p () "Error"
 
 
 -- >>> parseFromString exprParser "1+2*3 >= 4"
--- Right (Op Ge (Op Plus (Val (NumVal (Left 1))) (Op Times (Val (NumVal (Left 2))) (Val (NumVal (Left 3))))) (Val (NumVal (Left 4))))
+-- Right (Op Ge (Op Plus (Val 1) (Op Times (Val 2) (Val 3))) (Val 4))
 --
 
 
 -----------------------------------test for ifelse -------------------------------------------------
 -- >>> parseFromString stmtParser "if (1+2) { echo 1; echo 2; } else { echo 3; echo 4; }"
--- Right (If (Op Plus (Val (NumVal (Left 1))) (Val (NumVal (Left 2)))) (Sequence (Print (Val (NumVal (Left 1)))) (Print (Val (NumVal (Left 2))))) (Sequence (Print (Val (NumVal (Left 3)))) (Print (Val (NumVal (Left 4))))))
+-- Right (If (Op Plus (Val 1) (Val 2)) (Sequence (Print (Val 1)) (Print (Val 2))) (Sequence (Print (Val 3)) (Print (Val 4))))
 --
 
 -----------------------------------test for while -------------------------------------------------
 -- >>> parseFromString stmtParser "while (1+2) { echo 1; echo 2; }"
--- Right (While (Op Plus (Val (NumVal (Left 1))) (Val (NumVal (Left 2)))) (Sequence (Print (Val (NumVal (Left 1)))) (Print (Val (NumVal (Left 2))))))
+-- Right (While (Op Plus (Val 1) (Val 2)) (Sequence (Print (Val 1)) (Print (Val 2))))
 --
+
+-----------------------------------test for return -------------------------------------------------
+-- >>> parseFromString stmtParser "return 1+2"
+-- Right (Return (Op Plus (Val 1) (Val 2)))
+--
+
+-- >>> parseFromString stmtParser "return $cat"
+-- Right (Return (Var "cat"))
+--
+
+-- >>> parseFromString stmtParser "return cat + $dog"
+-- Right (Return (Op Plus (Var "cat") (Var "dog")))
+--
+
 
 -----------------------------------test for echo -------------------------------------------------
 -- >>> parseFromString stmtParser "echo \"hello\""
--- Right (Print (Val (StrVal "hello")))
+-- Right (Print (Val "hello"))
 --
 
 -- >>> parseFromString stmtParser "echo \"hello\"; echo \"world\""
--- Right (Sequence (Print (Val (StrVal "hello"))) (Print (Val (StrVal "world"))))
+-- Right (Sequence (Print (Val "hello")) (Print (Val "world")))
 --
 
 -- >>> parseFromString stmtParser "echo $cat"
@@ -286,4 +317,35 @@ parseFromString p = runParser p () "Error"
 -----------------------------------test for skip -------------------------------------------------
 -- >>> parseFromString stmtParser "skip"
 -- Right Skip
+--
+
+-----------------------------------test for errors------------------------------------------------------------
+-- >>> parseFromString exprParser "cat"
+-- Left "Error" (line 1, column 1):
+-- unexpected "c"
+-- expecting "$", number, literal string, "True", "False" or "("
+--
+
+-- >>> parseFromString exprParser "$"
+-- Left "Error" (line 1, column 2):
+-- unexpected end of input
+-- expecting identifier
+--
+
+-- >>> parseFromString exprParser "1+"
+-- Left "Error" (line 1, column 3):
+-- unexpected end of input
+-- expecting end of "+", "$", number, literal string, "True", "False" or "("
+--
+
+-- >>> parseFromString exprParser "not"
+-- Left "Error" (line 1, column 4):
+-- unexpected end of input
+-- expecting end of "not", "$", number, literal string, "True", "False" or "("
+--
+
+-- >>> parseFromString stmtParser "return cat + dog"
+-- Left "Error" (line 1, column 12):
+-- unexpected "+"
+-- expecting space or letter or digit
 --
