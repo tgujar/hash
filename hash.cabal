@@ -26,8 +26,10 @@ source-repository head
 library
   exposed-modules:
       Eval
+      Lang
       Lib
       Parse
+      ShEnv
       Types
   other-modules:
       Paths_hash
@@ -39,6 +41,7 @@ library
     , containers
     , mtl
     , parsec
+    , process
   default-language: Haskell2010
 
 executable hash-exe
@@ -55,6 +58,7 @@ executable hash-exe
     , hash
     , mtl
     , parsec
+    , process
   default-language: Haskell2010
 
 test-suite hash-test
@@ -72,4 +76,5 @@ test-suite hash-test
     , hash
     , mtl
     , parsec
+    , process
   default-language: Haskell2010
