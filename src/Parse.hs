@@ -67,29 +67,29 @@ bool = H.Val . H.BoolVal <$> do {
 
 -- Flag Parser for "set" command
 -- for set of flags refer https://fishshell.com/docs/current/cmds/set.html?highlight=set
-scope :: Parser H.Flag
-scope = H.Scope <$> oneOf "lgU"
+scope :: Parser H.RefScope 
+scope = do
+    f <- oneOf "lgU"
+    case f of
+        'l' -> return Local
+        'g' -> return Global 
+        _ -> return Universal 
 
-operation :: Parser H.Flag
-operation = H.Operation <$> oneOf "qes"
 
-flagParser :: ParsecT String () Data.Functor.Identity.Identity [Flag]
+flagParser :: ParsecT String () Data.Functor.Identity.Identity RefScope 
 flagParser = do
     _ <- char '-'
-    many1 (try operation <|> try scope)
+    scope
 
 -- Statement Parser
 stmtParser :: Parser H.Statement
-stmtParser = try funcP 
-    <|> try blockP 
+stmtParser = try blockP 
     <|> try sequenceP 
     <|> try assignP 
     <|> try ifelseP 
     <|> try whileP 
     <|> try skipP 
     <|> try echoP 
-    <|> try returnP
-    <|> try errorP
     <|> externP
 
 -- Statement Type parsers
@@ -106,11 +106,12 @@ externP = do
     ext <- sepBy1 (many1 (alphaNum <|> oneOf "~/-.")) spaces
     return $ H.External (head ext) (tail ext)
 
-funcP :: Parser H.Statement
-funcP = do
-    _ <- P.reservedOp lexer "function"
-    vars <- P.parens lexer $ P.commaSep lexer (P.identifier lexer)
-    H.Function vars <$> stmtParser
+-- Parser for function syntax
+-- funcP :: Parser H.Statement
+-- funcP = do
+--     _ <- P.reservedOp lexer "function"
+--     vars <- P.parens lexer $ P.commaSep lexer (P.identifier lexer)
+--     H.Function vars <$> stmtParser
 
 -- >>> parseFromString stmtParser "ls -la ~/tgujar"
 -- Right (External "ls" ["-la","~/tgujar"])
@@ -134,7 +135,7 @@ assignP = do
     v <- P.identifier lexer
     e <- exprParser
     case flags of
-        Nothing -> return $ H.Assign v [] e
+        Nothing -> return $ H.Assign v Local e
         (Just f) -> return $ H.Assign v f e
 
 blockP :: Parser H.Statement
@@ -164,11 +165,11 @@ ifelseP = do
     falseSt <- P.braces lexer stmtParser
     return $ H.If test trueSt falseSt
 
-
-returnP :: Parser H.Statement
-returnP = do
-    _ <- P.symbol lexer "return"
-    H.Return <$> exprParser
+-- Parser for the return statement of the funtion
+-- returnP :: Parser H.Statement
+-- returnP = do
+--     _ <- P.symbol lexer "return"
+--     H.Return <$> exprParser
 
 whileP :: Parser H.Statement
 whileP = do
@@ -203,7 +204,7 @@ so that the lang could support newlines as well.
 --}
 sequenceP :: Parser H.Statement
 sequenceP = do
-    s1 <- try funcP <|> try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> try returnP <|> externP
+    s1 <- try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> externP
     P.lexeme lexer (char ';')
     s2 <- stmtParser
     optional $ P.lexeme lexer (char ';')
