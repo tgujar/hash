@@ -21,13 +21,25 @@ description:         Please see the README on GitHub at <https://github.com/tguj
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring-trie >= 0.2.6
 - parsec
 - containers
 - QuickCheck
 - mtl
+- bytestring >= 0.10
+- utf8-string >= 1.0.2
+- haskeline >= 0.8.2
+- transformers >= 0.5.6.2
 
 library:
   source-dirs: src
+  dependencies:
+  - bytestring-trie >= 0.2.6
+  - mtl
+  - bytestring >= 0.10
+  - utf8-string >= 1.0.2
+  - haskeline >= 0.8.2
+  - transformers >= 0.5.6.2
 
 executables:
   hash-exe:
