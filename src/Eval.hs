@@ -23,7 +23,7 @@ import System.Directory
 -- --    (i) a WState-Transformer monad 
 -- --    (ii) an Exception monad with exceptions of type Value 
 -- ----------------------------------------------------------------------------------------------
-type MonadWhile m = (MonadIO m, MonadState WState m, MonadError Value m)
+type MonadHash m = (MonadIO m, MonadState WState m, MonadError Value m)
 
 -- This returns the value of the variable from the nearest scope or parent scope
 stackLookUp :: Variable -> Store -> Maybe Value
@@ -38,12 +38,12 @@ getScope :: RefScope -> Store -> ScopeVars
 getScope Local stor  = head stor
 getScope _ stor = last stor
 
-pushScope :: (MonadWhile m) => m ()
+pushScope :: (MonadHash m) => m ()
 pushScope  = do
   WS s log path <- get
   put (WS (initScope : s) log path)
 
-popScope :: (MonadWhile m) => m ()
+popScope :: (MonadHash m) => m ()
 popScope  = do
   WS s log path <- get
   put (WS (tail s) log path)
@@ -51,7 +51,7 @@ popScope  = do
 ----------------------------------------------------------------------------------------------
 -- | `readVar x` returns the value of the variable `x` in the "current store"
 ----------------------------------------------------------------------------------------------
-readVar :: (MonadWhile m) => Variable -> m Value
+readVar :: (MonadHash m) => Variable -> m Value
 readVar x = do
   WS s _ _ <- get
   case stackLookUp x s of
@@ -79,7 +79,7 @@ printString msg = do
 
 
 -- TODO complete prefix operations
-eval :: (MonadWhile m) => Expression -> m Value
+eval :: (MonadHash m) => Expression -> m Value
 eval (Var v)      = readVar v
 eval (Val v)      = return v
 eval (Op op e1 e2) = do
@@ -91,7 +91,7 @@ eval (PrefixOp op e) = do
   prefSemantics op v
 
 
-prefSemantics :: (MonadWhile m) => Prefop -> Value -> m Value
+prefSemantics :: (MonadHash m) => Prefop -> Value -> m Value
 prefSemantics Not (BoolVal b) = return $ BoolVal (not b)
 prefSemantics Not _ = throwError (StrVal "Invalid type for 'not' operation")
 prefSemantics Neg (NumVal (Left a)) = return $ NumVal (Left $ negate a)
@@ -107,7 +107,7 @@ getRL :: (Integral a, Num b) => (Either a b) -> b
 getRL a = if isRight a then fromRight 0 a else (fromIntegral (fromLeft 0 a))
 
 -- semantics for describing how operations work
-semantics :: (MonadWhile m) => Bop -> Value -> Value -> m Value
+semantics :: (MonadHash m) => Bop -> Value -> Value -> m Value
 semantics Plus (NumVal (Left n1)) (NumVal (Left n2)) = return $ NumVal (Left (n1 + n2))
 semantics Plus (NumVal n1) (NumVal n2) = return $ NumVal (Right ((getRL n1) + (getRL n2)))
 semantics Plus (StrVal s1) (StrVal s2) = return $ StrVal (s1 ++ s2)
@@ -147,7 +147,7 @@ semantics _ _ _ = throwError (StrVal "Types don't match")
 --                     _ -> False
 
 -- TO DO: Functions and blocks arent being evaluated
-evalS :: (MonadWhile m) => Statement -> m ()
+evalS :: (MonadHash m) => Statement -> m ()
 evalS (Assign v f e) = do
   val <- eval e
   writeVar f v val
@@ -198,7 +198,7 @@ evalS (HashFile f) = do
   check <- liftIO $ doesFileExist f
   if check then liftIO $ runFile f else throwError $ StrVal "No such file"
 
--- setFunction :: (MonadWhile m) => RefScope -> Variable -> m ()
+-- setFunction :: (MonadHash m) => RefScope -> Variable -> m ()
 -- setFunction sc v = do
 --   val <- readVar' sc v
 --   liftIO $ print (show val)
@@ -227,7 +227,7 @@ helper cmd args= do
 
 -- --------------------------------------------------------------------------
 -- -- | Next, we will implement a *concrete instance* of a monad `m` that
--- --   satisfies the constraints of MonadWhile:
+-- --   satisfies the constraints of MonadHash:
 -- --------------------------------------------------------------------------
 
 -- type Eval = StateT WState (ExceptT Value IO)
