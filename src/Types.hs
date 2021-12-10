@@ -23,7 +23,13 @@ data Value
   = NumVal (Either Integer Double)
   | BoolVal Bool
   | StrVal String
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
+
+instance Show Value where
+  show (NumVal (Left n)) = show n
+  show (NumVal (Right n)) = show n
+  show (StrVal s) = show s
+  show (BoolVal b) = show b
 
 data Flag
   = Scope Char  -- flags for scope as defined here https://fishshell.com/docs/current/cmds/set.html?highlight=set
