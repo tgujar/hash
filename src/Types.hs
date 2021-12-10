@@ -74,6 +74,7 @@ data Statement
   -- | Return   Expression
   | Block    Statement
   | External Command Args
+  | HashFile FilePath
   | Error    
   deriving (Show)
 

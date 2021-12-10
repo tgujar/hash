@@ -15,6 +15,7 @@ import Text.Parsec.String
 import Parse as P
 import System.Process (callProcess)
 import Control.Exception
+import System.Directory
 
 
 -- ----------------------------------------------------------------------------------------------
@@ -85,6 +86,21 @@ eval (Op op e1 e2) = do
   v1 <- eval e1
   v2 <- eval e2
   semantics op v1 v2
+eval (PrefixOp op e) = do
+  v <- eval e
+  prefSemantics op v
+
+
+prefSemantics :: (MonadWhile m) => Prefop -> Value -> m Value
+prefSemantics Not (BoolVal b) = return $ BoolVal (not b)
+prefSemantics Not _ = throwError (StrVal "Invalid type for 'not' operation")
+prefSemantics Neg (NumVal (Left a)) = return $ NumVal (Left $ negate a)
+prefSemantics Neg (NumVal (Right a)) = return $ NumVal (Right $ negate a)
+prefSemantics Neg _ = throwError (StrVal "Invalid type for 'negation' operation")
+
+prefSemantics Pos (NumVal a) = return $ NumVal a
+prefSemantics Pos _ = throwError (StrVal "Invalid type for 'negation' operation")
+
 
 -- get the value from inside NumVal
 getRL :: (Integral a, Num b) => (Either a b) -> b
@@ -118,6 +134,10 @@ semantics Lt (StrVal n1) (StrVal n2) = return $ BoolVal (n1 < n2)
 
 semantics Le (NumVal n1) (NumVal n2) = return $ BoolVal ((getRL n1) < (getRL n2))
 semantics Le (StrVal n1) (StrVal n2) = return $ BoolVal (n1 <= n2)
+
+semantics And (BoolVal n1) (BoolVal n2) = return $ BoolVal (n1 && n2)
+semantics Or (BoolVal n1) (BoolVal n2) = return $ BoolVal (n1 || n2)
+
 semantics _ _ _ = throwError (StrVal "Types don't match")
 
 
@@ -172,20 +192,11 @@ evalS (Block s1) = do
   evalS s1
   popScope
 
-evalS _ = undefined
+evalS Error = return ()
 
--- *** unit tests for evalS ***
--- >>> do evalS Skip
--- <interactive>:933:2-11: error:
---     • Non type-variable argument in the constraint: MonadState WState m
---       (Use FlexibleContexts to permit this)
---     • When checking the inferred type
---         it :: forall (m :: * -> *).
---               (MonadIO m, MonadState WState m, MonadError Value m) =>
---               m ()
---
-
--- IDK what this error is lmfao
+evalS (HashFile f) = do
+  check <- liftIO $ doesFileExist f
+  if check then liftIO $ runFile f else throwError $ StrVal "No such file"
 
 -- setFunction :: (MonadWhile m) => RefScope -> Variable -> m ()
 -- setFunction sc v = do
@@ -268,7 +279,7 @@ printParsed s = do
   print p
 
 -- >>> printParsed "test/test.hash"
--- Right (Sequence (Assign "X" Local (Val 10)) (Sequence (Assign "Y" Local (Val 3)) (Sequence (Assign "Z" Local (Val 0)) (Sequence (While (Op Gt (Var "X") (Val 0)) (Sequence (Assign "Z" Local (Val 3)) (Sequence (Print (Val "Hello world")) (Assign "X" Global (Op Minus (Var "X") (Val 1)))))) (Print (Var "X"))))))
+-- Right (Sequence (Assign "X" Local (Val 10)) (Sequence (Assign "Y" Local (Val 3)) (Sequence (Assign "Z" Local (Val 0)) (Sequence (While (Op Gt (Var "X") (Val 0)) (Sequence (Assign "Z" Local (Val 3)) (Sequence (Print (Val "Hello world")) (Sequence (HashFile "/Users/tgujar/Projects/UCSD/CSE230/hash copy/test/test2.hash") (Assign "X" Global (Op Minus (Var "X") (Val 1))))))) (Print (Var "X"))))))
 --
 
 -- >>> runFile "test/test.hash"
