@@ -11,7 +11,8 @@ parseEvalTestCases = [
         ("set dog 3; echo $dog + 5", WS initStore [] "", WS [M.fromList [("dog", NumVal (Left 3))]] ["8"] ""),
         ("set dog 3; echo $dog + 5", WS initStore [] "/someDir", WS [M.fromList [("dog", NumVal (Left 3))]] ["8"] "/someDir"),
         ("echo 10 - 5 + 2", WS initStore [] "", WS [M.empty] ["7"] ""),
-        ("if 5 < 3 { set -g c 2 } else { set -g c 3.3 }", WS initStore [] "", WS [M.fromList [("c", NumVal (Right 3.3))]] [] "")
+        ("if 5 < 3 { set -g c 2 } else { set -g c 3.3 }", WS initStore [] "", WS [M.fromList [("c", NumVal (Right 3.3))]] [] ""),
+        ("if 5 < 3 { set c 2 } else { set c 3.3 }", WS initStore [] "", WS [M.empty] [] "")
     ]
 
 testParseEval :: IO ()

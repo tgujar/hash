@@ -16,7 +16,7 @@ main = do
     history <- initialHistory
     print history
     currentDirectory <- getCurrentDirectory
-    print currentDirectory
+    -- print currentDirectory
     repl (history, WS initStore [] currentDirectory)
     where
         initialHistory :: IO HistoryTrie
