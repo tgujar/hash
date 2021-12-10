@@ -52,6 +52,50 @@ We define the following milestones for the project:
 ## Architecture
 We divided the project into four main parts: Parser, Evaluator, History, and the REPL.
 
+* Syntax
+The Hash language which we implemented for the shell supports `Variables` of type Integers and Doubles (hereafter referred to as Nums), Strings and Booleans.
+
+The syntax supports the following operations
+- Binary operations 
+    - `+` This operation is supported by Strings, Integers and Doubles. For Strings the behaviour is same as that of comcatenation. For Nums the behaviour is same as that expected for numbers. The evaluator imlicitly converts to a Double if the Nums types are mixed.
+    - `-, *, /` These operations are only supported by Nums and behave in the way which is expected for numbers. Integers are implicitly promoted to Doubles when the input types are mixed. Division always produces a Double.
+    - `and, or` The operations are only supported by Booleans and perform Boolean `and` and `or` respectively.
+    - `<=, <, >=, >, ==` All types support comparison operators. For strings comparison is performed based on lexical ordering.
+    
+    For numeric operations precedence is followed based on the BODMAS ordering.
+    
+- Prefix operations
+    - `not` Negates a Boolean
+    - `+` Identity function for Nums
+    - `-` Negates the value of a Num
+
+- Expressions
+    In Hash an expression can be a `Variable`, a `Value`, or an prefix or binary operation acting on two `Variables`
+    
+- Statements
+    The following statements types are supported `if..else`, `while`, `assignment operation`, `echo` (print to terminal), `skip`(NOP).
+    Additionally we have syntax for calling scripts written in Hash using `hash someFile.hash`.  
+    
+    The language also supports scoping where a `block`({}), `while` and `if..else` have their own scope. `flags` passed to the `assignment operation` determine if the variable in the global scope or the local scope is to be set.
+    
+    **Note:** Changes made to variable inside a scope **Does Not** affect their value outside the local scope, if appropriate `flag` is not passed.
+    
+    **Sequence of statements MUST be delimited by a ";" character**
+    
+    E.g Hash script
+    
+    ```
+    set X 10;
+    set Y 3;    
+    set Z 0;
+    while $X > 0 {
+        echo "Hello world";
+        hash "test/test2.hash";
+        set -g X $X - 1;
+    };
+    echo $X;
+    ```
+
 * Parser
     - Core Design
          
