@@ -4,6 +4,7 @@ set Z 0;
 while $X > 0 {
     set Z 3;
     echo "Hello world";
+    hash "test/test2.hash";
     set -g X $X - 1;
 };
 echo $X;

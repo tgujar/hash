@@ -15,6 +15,7 @@ import Text.Parsec.String
 import Parse as P
 import System.Process (callProcess)
 import Control.Exception
+import System.Directory
 
 
 -- ----------------------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ getScope _ stor = last stor
 
 pushScope :: (MonadWhile m) => m ()
 pushScope  = do
-  WS s log path <- get 
+  WS s log path <- get
   put (WS (initScope : s) log path)
 
 popScope :: (MonadWhile m) => m ()
@@ -91,7 +92,7 @@ eval (PrefixOp op e) = do
 
 
 prefSemantics :: (MonadWhile m) => Prefop -> Value -> m Value
-prefSemantics Not (BoolVal b) = return $ BoolVal (not b) 
+prefSemantics Not (BoolVal b) = return $ BoolVal (not b)
 prefSemantics Not _ = throwError (StrVal "Invalid type for 'not' operation")
 prefSemantics Neg (NumVal (Left a)) = return $ NumVal (Left $ negate a)
 prefSemantics Neg (NumVal (Right a)) = return $ NumVal (Right $ negate a)
@@ -191,6 +192,11 @@ evalS (Block s1) = do
   evalS s1
   popScope
 
+evalS Error = return ()
+
+evalS (HashFile f) = do
+  check <- liftIO $ doesFileExist f
+  if check then liftIO $ runFile f else throwError $ StrVal "No such file"
 
 
 
@@ -206,7 +212,7 @@ evalS (Block s1) = do
 --   case sc of
 --     Local -> put (WS (s':tail s) log)
 --     _ -> put (WS (init s ++ [s']) log)
-  
+
 
 
 
@@ -275,20 +281,29 @@ printParsed s = do
   print p
 
 -- >>> printParsed "test/test.hash"
--- Right (Sequence (Assign "X" Local (Val 10)) (Sequence (Assign "Y" Local (Val 3)) (Sequence (Assign "Z" Local (Val 0)) (Sequence (Assign "T" Local (Op And (Val True) (Val False))) (Sequence (While (Op Gt (Var "X") (Val 0)) (Sequence (Assign "Z" Local (Val 3)) (Sequence (Print (Val "Hello world")) (Assign "X" Global (Op Minus (Var "X") (Val 1)))))) (Sequence (Print (Var "X")) (Print (Var "T"))))))))
+-- Right (Sequence (Assign "X" Local (Val 10)) (Sequence (Assign "Y" Local (Val 3)) (Sequence (Assign "Z" Local (Val 0)) (Sequence (While (Op Gt (Var "X") (Val 0)) (Sequence (Assign "Z" Local (Val 3)) (Sequence (Print (Val "Hello world")) (Sequence (HashFile "/Users/tgujar/Projects/UCSD/CSE230/hash copy/test/test2.hash") (Assign "X" Global (Op Minus (Var "X") (Val 1))))))) (Print (Var "X"))))))
 --
 
 -- >>> runFile "test/test.hash"
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "\"Hello world\""
+-- "\"Hello I am still awake\""
 -- "0"
--- "True"
 --
