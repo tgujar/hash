@@ -13,7 +13,7 @@ import Data.Either
 import Text.Parsec.String
 import Parse as P
 import Data.Map
-import System.Process (callProcess)
+import System.Process (callProcess, runCommand)
 import Control.Exception
 import Control.Arrow (Arrow(first))
 
@@ -168,6 +168,18 @@ leftMaybe :: Either a b -> Maybe a
 leftMaybe (Left v)  = Just v
 leftMaybe (Right _) = Nothing
 
+
+runCmd :: String -> WState -> IO Bool
+runCmd str state = do
+  p <- parseFromStringIO P.stmtParser str
+  case p of
+    Left err   -> do {print err; return False}
+    Right stmt -> runExec (evalS stmt) state
+
+-- >>> runCmd "echo 1+1" (WS initStore [])
+-- "2"
+-- True
+--
 
 -- Run a Hash script
 runFile :: FilePath -> IO ()

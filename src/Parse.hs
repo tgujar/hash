@@ -200,9 +200,11 @@ sequenceP = do
     return $ H.Sequence s1 s2
 
 
+parseFromStringIO :: Parser a -> String -> IO (Either ParseError a)
+parseFromStringIO p s = return $ runParser p () "Parse Error" s
 
 parseFromString :: Parser a -> String -> Either ParseError a
-parseFromString p = runParser p () "Error"
+parseFromString p = runParser p () "Parse Error"
 
 -----------------------------------test for string parser-----------------------------------------------------
 -- >>> parseFromString exprParser "$cat"
