@@ -48,19 +48,16 @@ We define the following milestones for the project:
     - Plugged my history functions into Haskeline's system for tab-triggered auto-complete.
     - Added some property tests for the history trie.
     - Integrated history and parse-eval pieces together into the REPL.
+    - Wrote tests for parse-eval.
 
 
 
 ## Library Usage/ Library References
-* [brick](https://github.com/jtdaugherty/brick/)
-* [shellmet](https://hackage.haskell.org/package/shellmet)
-* [coquina](https://hackage.haskell.org/package/coquina)
-* [procex](https://hackage.haskell.org/package/procex)
 * [bytestring-trie](https://hackage.haskell.org/package/bytestring-trie)
 * [haskeline](https://hackage.haskell.org/package/haskeline)
 
 ## Reproduction
-* [cabal](https://www.haskell.org/cabal/) or [stack](https://docs.haskellstack.org/en/stable/README/)
+* [stack](https://docs.haskellstack.org/en/stable/README/)
 ## Unit Tesing
 * [QuickCheck](https://hackage.haskell.org/package/QuickCheck)
 
