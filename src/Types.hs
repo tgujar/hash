@@ -10,27 +10,44 @@ import           GHC.Exts
 import           GHC.Generics
 import qualified Data.Map as Map
 
-
 type Variable = String
 
 -- TO DO: Implement scoping
 -- Store should be a stack of Maps, where bottom of stack represents the global scope
 type Store    = Map.Map Variable Value
+type Command  = String
+type Args     = [String]
 
 
-data Value 
-  = IntVal Int
-  | FloatVal Float
+data Value
+  = NumVal (Either Integer Double)
   | BoolVal Bool
   | StrVal String
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
 
-data Expression 
+instance Show Value where
+  show (NumVal (Left n)) = show n
+  show (NumVal (Right n)) = show n
+  show (StrVal s) = show s
+  show (BoolVal b) = show b
+
+data Flag
+  = Scope Char  -- flags for scope as defined here https://fishshell.com/docs/current/cmds/set.html?highlight=set
+  | Operation Char
+  deriving (Show)
+
+data Expression
   = Var Variable
   | Val Value
   | Op  Bop Expression Expression
+  | PrefixOp Prefop Expression
   deriving (Show)
 
+data Prefop
+  = Not 
+  | Neg 
+  | Pos
+  deriving (Show)
 
 data Bop 
   = Plus
@@ -41,17 +58,30 @@ data Bop
   | Ge
   | Lt
   | Le
+  | IsEq
+  | And
+  | Or
   deriving (Show)
 
-data Statement 
-  = Assign   Variable   Expression
+data Statement
+  = Assign   Variable [Flag] Expression
   | If       Expression Statement Statement
   | While    Expression Statement
   | Sequence Statement  Statement
   | Skip
   | Print    Expression 
+  | Function [Variable] Statement
+  | Return   Expression
+  | Block    Statement
+  | External Command Args
   deriving (Show)
 
+-- for error messages
+data Message 
+  = SysUnExpect String
+  | UnExpect String
+  | Expect String
+  | Message String
 
 ----------------------------------------------------------------------------------------------
 -- | `WState` is the "State" maintained by the interpreter's State-Transformer Monad

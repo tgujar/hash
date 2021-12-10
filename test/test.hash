@@ -1,0 +1,8 @@
+set -U X 10;
+set -U Y 3;
+set -U Z 0;
+while $X > 0 {
+    echo "Hello world";
+    ls -la;
+    set -U X $X - 1;
+}

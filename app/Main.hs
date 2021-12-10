@@ -6,8 +6,8 @@ import Data.Trie
 
 import Lib
 
-import ConsolePrompt
 
+import ConsolePrompt
 main :: IO ()
 main = do
     history <- initialHistory
@@ -18,3 +18,4 @@ main = do
         initialHistory = do
             raw <- readFile historyPath
             return (foldl updateHistory empty (lines raw))
+
