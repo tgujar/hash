@@ -103,10 +103,13 @@ The syntax supports the following operations
 * Parser
     - Core Design
          
-        The basic implementation of the design of parser is based on the parse.hs in hw2. Since the parser in the homework has limited supporting types, we define the types and functions such as if..else, while loops, comment block supports, set builtin, commands for "cd" and "echo" and prefix and infix operators.
+        The basic implementation of the design of parser is based on the parse.hs in hw2. Since the parser in the homework has limited supporting types, we define the types and functions such as if..else, while loops, comment block supports, set builtin and prefix and infix operators.
 
 * Evaluator
-
+    - Core Design
+         
+        The basic implementation of the design of evaluator is based on the eval.hs in hw3. We define the store, monad and add features on evaluating executables using MonadIO and liftIO.
+        
 * History
     - Core Design
     
@@ -213,4 +216,4 @@ I think the main challange for me was to find out the way that helped my teammat
 
 I collaborated with Tanmay for working on the evaluator and parser. We introduced a lot of usage on Parsec library, which allows us to realize the functionality similar to FISH shell. The concept of our working type is that I create the first version of the implementation of both files, then Tanmay glued up and devised them and add more features, and I keep working on top of them and so on. 
 
-One of my challenges is handling the errors for parser, I was unable to apply the [Parsec.Error](https://hackage.haskell.org/package/parsec-3.1.15.0/docs/Text-Parsec-Error.html) library into our project due to limited time. We somehow removed other feature such as function parsing also but the basic expectation of shell was completed. The greatest challenges for me is the time allocation for the project, I should take more time working on the project before the final week. Since Richard's feature is based on the completion of evaluator and parser, the timeline for supporting basic predefined commands is far from our expectation, this lead to the soaring workload for everyone in the last week of project. Besides, I failed on integrating Chi-Cheng's Turtle library idea, the better integration would also be solved by the timing of working on the project.
+We somehow removed other feature such as function parsing due to limited time, but the basic expectation of shell was completed. The greatest challenges for me is the time allocation for the project, I should take more time working on the project before the final week. Since Richard's feature is based on the completion of evaluator and parser, the timeline for supporting basic predefined commands is far from our expectation, this lead to the soaring workload for everyone in the last week of project. Besides, I failed on integrating Chi-Cheng's Turtle library idea, the better integration would also be solved by the timing of working on the project.
