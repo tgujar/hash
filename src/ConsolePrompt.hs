@@ -61,7 +61,7 @@ repl initial = flip evalStateT initial $ runInputT historySettings loop
                     let
                         cleanedInput = dropWhileEnd isSpace input
                     (res, st') <- liftIO (runCmd cleanedInput st)
-                    outputStrLn $ show res
+                    -- outputStrLn $ show res
                     Control.Monad.when res $
                         do
                             lift $ modify (\(history, _) -> (updateHistory history cleanedInput, st')) -- update history trie and state store
