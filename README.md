@@ -57,7 +57,7 @@ We divided the project into four main parts: Parser, Evaluator, History, and the
 * Evaluator
 
 * History
-- Core Design
+    - Core Design
 
 I knew early on that I wanted the history to be represented as a trie, so that querying for matches given a prefix would be efficient.
 Thus, I leveraged the Data.Trie library and built my query and upsert functions on top of it.
@@ -66,7 +66,7 @@ To query the history structure, one provides a prefix and gets a list of matches
 
 To update the history, one provides a string to be added in with an initial frequency count of 1. If the string already exists, then its count is just incremented by 1 instead.
 
-- Persistence
+    - Persistence
 
 History is persisted as a file, where each line records one of the user's inputs.
 On startup, this file is read into the application and serves as the initial history.
@@ -74,7 +74,7 @@ On exit, the final history is written out into this file.
 
 This logic was handled by the Haskeline library.
 
-- User Interface
+    - User Interface
 
 I was not certain of how I wanted the user to actually be able to request the autocomplete. Tab-based completion tends to be token-based in shells, rather than line-based.
 However, in the interest of time, I decided to leverage Haskeline's tab completion functionality and complete only whole lines at once instead.
