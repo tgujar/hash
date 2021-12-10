@@ -4,7 +4,8 @@
 
 module Eval where
 
-import qualified Data.Map as Map
+import qualified Data.Map as M
+import Data.List as L
 import           Control.Monad.State
 import           Control.Monad.Except
 import           Control.Monad.Identity
@@ -12,10 +13,8 @@ import           Types
 import Data.Either
 import Text.Parsec.String
 import Parse as P
-import Data.Map
-import System.Process (callProcess, runCommand)
+import System.Process (callProcess)
 import Control.Exception
-import Control.Arrow (Arrow(first))
 
 
 -- ----------------------------------------------------------------------------------------------
@@ -25,24 +24,49 @@ import Control.Arrow (Arrow(first))
 -- ----------------------------------------------------------------------------------------------
 type MonadWhile m = (MonadIO m, MonadState WState m, MonadError Value m)
 
+-- This returns the value of the variable from the nearest scope or parent scope
+stackLookUp :: Variable -> Store -> Maybe Value
+stackLookUp v [] = Nothing
+stackLookUp v [m] =  M.lookup v m
+stackLookUp v m = case v' of
+                    Nothing -> stackLookUp v (tail m)
+                    Just value -> v'
+  where v' = M.lookup v (head m)
+
+getScope :: RefScope -> Store -> ScopeVars
+getScope Local stor  = head stor
+getScope _ stor = last stor
+
+pushScope :: (MonadWhile m) => m ()
+pushScope  = do
+  WS s log <- get 
+  put (WS (initScope : s) log)
+
+popScope :: (MonadWhile m) => m ()
+popScope  = do
+  WS s log <- get
+  put (WS (tail s) log)
+
 ----------------------------------------------------------------------------------------------
 -- | `readVar x` returns the value of the variable `x` in the "current store"
 ----------------------------------------------------------------------------------------------
 readVar :: (MonadWhile m) => Variable -> m Value
 readVar x = do
   WS s _ <- get
-  case Map.lookup x s of
+  case stackLookUp x s of
     Just v  -> return v
     Nothing -> throwError $ error $ "Variable " ++ show x ++ " not found"
 
 ----------------------------------------------------------------------------------------------
 -- | `writeVar x v` updates the value of `x` in the store to `v`
 ----------------------------------------------------------------------------------------------
-writeVar :: (MonadState WState m) => Variable -> Value -> m ()
-writeVar x v = do
+writeVar :: (MonadState WState m) => RefScope -> Variable -> Value -> m ()
+writeVar scope x v = do
   WS s log <- get
-  let s' = Map.insert x v s
-  put (WS s' log)
+  let s' = M.insert x v (getScope scope s)
+  case scope of
+    Local -> put (WS (s':tail s) log)
+    _ -> put (WS (init s ++ [s']) log)
 
 ----------------------------------------------------------------------------------------------
 -- | `printString msg` adds the message `msg` to the output log
@@ -96,24 +120,31 @@ semantics Le (NumVal n1) (NumVal n2) = return $ BoolVal ((getRL n1) < (getRL n2)
 semantics Le (StrVal n1) (StrVal n2) = return $ BoolVal (n1 <= n2)
 semantics _ _ _ = throwError (StrVal "Types don't match")
 
--- TO DO: FUnctions and blocks arent being evaluated
+
+-- isScopeFlag :: RefScope -> Bool
+-- isScopeFlag f = case f of
+--                     (Scope _) -> True
+--                     _ -> False
+
+-- TO DO: Functions and blocks arent being evaluated
 evalS :: (MonadWhile m) => Statement -> m ()
-evalS (Assign v _ e) = do
+evalS (Assign v f e) = do
   val <- eval e
-  writeVar v val
+  writeVar f v val
   return ()
 
 evalS (If e s1 s2) = do
   val <- eval e
   case val of
-    (BoolVal True) -> evalS s1
-    (BoolVal False) -> evalS s2
+    (BoolVal True) -> do{pushScope; evalS s1; popScope}
+    (BoolVal False) -> do{pushScope; evalS s2; popScope}
     _ -> throwError (StrVal "Type error")
+
 
 evalS (While e s) = do
   val <- eval e
   case val of
-    (BoolVal True) -> do {evalS s; evalS (While e s)}
+    (BoolVal True) -> do {pushScope; evalS s; evalS (While e s); popScope}
     (BoolVal False) -> return ()
     _               -> throwError (StrVal "Type error")
 
@@ -135,6 +166,31 @@ evalS (Print e) = do
 evalS (External cmd args) = do
   liftIO $ helper cmd args
   return ()
+
+evalS (Block s1) = do
+  pushScope
+  evalS s1
+  popScope
+
+
+
+
+-- setFunction :: (MonadWhile m) => RefScope -> Variable -> m ()
+-- setFunction sc v = do
+--   val <- readVar' sc v
+--   liftIO $ print (show val)
+--   printString $ show val
+
+-- setFunction sc Erase v = do
+--   WS s log <- get
+--   let s' = M.delete v (getScope sc s)
+--   case sc of
+--     Local -> put (WS (s':tail s) log)
+--     _ -> put (WS (init s ++ [s']) log)
+  
+
+
+
 
 helper :: FilePath -> [String] -> IO ()
 helper cmd args= do
