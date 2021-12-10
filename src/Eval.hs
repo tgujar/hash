@@ -184,8 +184,10 @@ evalS (Print e) = do
 --   throwError val
 
 evalS (External cmd args) = do
-  liftIO $ helper cmd args
-  return ()
+  check <- liftIO $ helper cmd args
+  case check of
+    False -> throwError $ StrVal "External command error"
+    True -> return ()
 
 evalS (Block s1) = do
   pushScope
@@ -215,12 +217,12 @@ evalS (HashFile f) = do
 
 
 
-helper :: FilePath -> [String] -> IO ()
+helper :: FilePath -> [String] -> IO (Bool)
 helper cmd args= do
   res <- try (callProcess cmd args) :: IO (Either IOError ())
   case res of
-      Left ex  ->  putStrLn $ "Caught exception: " ++ show ex
-      Right val -> return ()    -- Use to debug:  putStrLn $ "The answer was: " ++ show val
+      Left ex  ->  do{putStrLn $ "Caught exception: " ++ show ex; return False}
+      Right val -> return True    -- Use to debug:  putStrLn $ "The answer was: " ++ show val
 
 
 
@@ -258,9 +260,10 @@ runCmd str state = do
     Left err   -> do {print err; return (False, state)}
     Right stmt -> runExec (evalS stmt) state
 
--- >>> runCmd "echo 1+1" (WS initStore [] "")
--- "2"
--- True
+-- >>> runCmd "$$" (WS initStore [] "")
+-- "Parse Error" (line 1, column 1):
+-- unexpected "$"
+-- expecting "{", "set", "if", "while", "skip", "echo", "hash" or letter or digit
 --
 
 -- Run a Hash script
