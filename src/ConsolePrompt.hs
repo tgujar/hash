@@ -36,11 +36,12 @@ customComplete :: CompletionFunc (StateT REPLState IO)
 customComplete = completeWordWithPrev Nothing " \t" searchHistory
 
 searchHistory :: String -> String -> StateT REPLState IO [Completion]
-searchHistory prefix suffix = do
+searchHistory rev_prefix suffix = do
     (history, _) <- get
     let
-        matches = findMatches history (prefix++suffix) -- we aren't matching on tokens right now, only the whole line
-    pure $ fmap (\s -> Completion s s True) (map fst matches)
+        prefix = reverse rev_prefix
+        matches = findMatches history (dropWhileEnd isSpace (prefix++suffix)) -- we aren't matching on tokens right now, only the whole line
+    pure $ fmap (\s -> Completion s s True) (map (\(s, freq) -> getSuffixDiff s prefix) matches)
 
 repl :: REPLState -> IO ()
 repl initial = flip evalStateT initial $ runInputT historySettings loop
@@ -62,6 +63,7 @@ repl initial = flip evalStateT initial $ runInputT historySettings loop
                     -- (_, st@(WS _ _ path)) <- lift get
                     -- outputStrLn $ "Input was: " ++ input-- ++ "; current directory is " ++ path
                     (res, st') <- liftIO (runCmd cleanedInput st) -- runCmd and runFile are parallel functions; ideally we have something that can funnel the call to the right place
+                    outputStrLn $ (show res)
                     Control.Monad.when res $
                         do
                             lift $ modify (\(history, _) -> (updateHistory history cleanedInput, st')) -- update history trie and state store

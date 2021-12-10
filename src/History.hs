@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE ConstraintKinds           #-}
 
-module History (findMatches, updateHistory, HistoryTrie) where
+module History (findMatches, updateHistory, HistoryTrie, getSuffixDiff) where
 
 -- history as trie
 -- https://hackage.haskell.org/package/bytestring-trie-0.2.6/docs/Data-Trie.html
@@ -44,6 +44,13 @@ findMatches history input =
 updateHistory :: HistoryTrie -> String -> HistoryTrie
 updateHistory history input = insertWith (+) (stringToByteString input) 1 history
 
+getSuffixDiff :: String -> String -> String
+getSuffixDiff str prefix =
+    case (str, prefix) of
+        ([], _) -> []
+        (str, []) -> str
+        (c:cs, p:ps) -> if c == p then getSuffixDiff cs ps else c:cs
+
 
 -- some small tests --
 
@@ -56,6 +63,10 @@ testHistory = Trie.fromList (map (Data.Bifunctor.first stringToByteString) [("ls
 
 -- >>> updateHistory testHistory "ls"
 -- Data.Trie.fromList [("ls",4),("ls -a",2),("ls -l",1),("mkdir blah",1)]
+--
+
+-- >>> findMatches testHistory "mk"
+-- [("mkdir blah",1)]
 --
 
 -- quickcheck --
