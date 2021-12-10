@@ -15,10 +15,6 @@ Key features:
 We define the following milestones for the project:
 * Week of 11/19
     - Narrow down the libraries we might use/refer  (starting with the shortlist below).
-        * Richard will look at procex.
-        * Chi-Cheng will look at shellmet. 
-        * Sung-Yan will look at coquina.
-        * Tanmay will look at brick
     - Implement the interactive CLI and support for some/all predefined commands. At a minimum, the user should be able to echo back their input.
     - Add unit tests for the features.
 * Week of 11/26
@@ -143,6 +139,32 @@ The syntax supports the following operations
 
 ## Challenges
 * See everyone's report below for their thoughts
+
+## Milestone Report (Tanmay)
+
+* Week of 11/19
+    - I spent the first week researching the fish shell, its features and a probable subset of the feature set we could implement. I planned on implementing basic language functionality including fucnctions, scopes, common operators.
+* Week of 11/26
+    - I looked into how we could go about implementing operator precedence using Parsec and tried a small POC.
+    - I tried finding libraries which could make implementing the shell easier i.e which would help with running commands 
+* Week of 12/3
+    - Mostly studied for finals. Me and David implemented a basic parser using the same template as HW2 and HW3 but we realised that 
+    doing operator precedence using that was going to be a bit more involved.
+* Week of 12/10
+    - Found how to use Text.Parsec.Expr to do operator precedence and create language definitions
+    - Completed defining th Parser and Evaluator for Hash language
+    - Added scoping to the language
+    - Added ability to run external commands using callProcess defined in System.Process
+    - Wrote test script for Hask shell
+
+In summary, I mainly worked on the parse, evaluator, definition of the Hash language and getting processes to run from within the
+Hash shell
+
+The main challenges, other than procrastination, that I faced in this process were three-fold:
+* Defining a language using Parsec
+* Learning more about the Monad transformer library, mainly combining monads to have IO at the base instead of Identity. 
+* Using Token parsing
+* Implementing scoping using a stack
 
 
 ## (Late) Milestone Report (Richard)
