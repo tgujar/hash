@@ -82,15 +82,13 @@ flagParser = do
 
 -- Statement Parser
 stmtParser :: Parser H.Statement
-stmtParser = try funcP 
-    <|> try blockP 
+stmtParser = try blockP 
     <|> try sequenceP 
     <|> try assignP 
     <|> try ifelseP 
     <|> try whileP 
     <|> try skipP 
     <|> try echoP 
-    <|> try returnP
     <|> externP
 
 -- Statement Type parsers
@@ -107,11 +105,12 @@ externP = do
     ext <- sepBy1 (many1 (alphaNum <|> oneOf "~/-.")) spaces
     return $ H.External (head ext) (tail ext)
 
-funcP :: Parser H.Statement
-funcP = do
-    _ <- P.reservedOp lexer "function"
-    vars <- P.parens lexer $ P.commaSep lexer (P.identifier lexer)
-    H.Function vars <$> stmtParser
+-- Parser for function syntax
+-- funcP :: Parser H.Statement
+-- funcP = do
+--     _ <- P.reservedOp lexer "function"
+--     vars <- P.parens lexer $ P.commaSep lexer (P.identifier lexer)
+--     H.Function vars <$> stmtParser
 
 -- >>> parseFromString stmtParser "ls -la ~/tgujar"
 -- Right (External "ls" ["-la","~/tgujar"])
@@ -165,11 +164,11 @@ ifelseP = do
     falseSt <- P.braces lexer stmtParser
     return $ H.If test trueSt falseSt
 
-
-returnP :: Parser H.Statement
-returnP = do
-    _ <- P.symbol lexer "return"
-    H.Return <$> exprParser
+-- Parser for the return statement of the funtion
+-- returnP :: Parser H.Statement
+-- returnP = do
+--     _ <- P.symbol lexer "return"
+--     H.Return <$> exprParser
 
 whileP :: Parser H.Statement
 whileP = do
@@ -196,7 +195,7 @@ so that the lang could support newlines as well.
 --}
 sequenceP :: Parser H.Statement
 sequenceP = do
-    s1 <- try funcP <|> try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> try returnP <|> externP
+    s1 <- try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> externP
     P.lexeme lexer (char ';')
     s2 <- stmtParser
     optional $ P.lexeme lexer (char ';')

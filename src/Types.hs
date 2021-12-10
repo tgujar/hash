@@ -70,8 +70,8 @@ data Statement
   | Sequence Statement  Statement
   | Skip
   | Print    Expression 
-  | Function [Variable] Statement
-  | Return   Expression
+  -- | Function [Variable] Statement
+  -- | Return   Expression
   | Block    Statement
   | External Command Args
   deriving (Show)
@@ -99,3 +99,6 @@ type Log      = [String]
 -- | `initStore` is the empty state (all variables undefined), log is empty
 initStore :: Store  
 initStore = [Map.empty]
+
+initScope :: ScopeVars
+initScope = Map.empty
