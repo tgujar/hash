@@ -55,11 +55,11 @@ repl initial = flip evalStateT initial $ runInputT historySettings loop
                         modifyHistory (addHistory "quit")
                         outputStrLn "**Exited**"
                 Just input -> do
-                    outputStrLn $ "Input was: " ++ input ++ ";"
                     -- strip ending whitespace on input
                     let
                         cleanedInput = dropWhileEnd isSpace input
-                    (_, st) <- lift get
+                    (_, st@(WS _ _ path)) <- lift get
+                    outputStrLn $ "Input was: " ++ input ++ "; current directory is " ++ path
                     (res, st') <- liftIO (runCmd cleanedInput st) -- runCmd and runFile are parallel functions; ideally we have something that can funnel the call to the right place
                     Control.Monad.when res $
                         do

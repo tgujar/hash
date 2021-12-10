@@ -9,11 +9,15 @@ import Lib
 import ConsolePrompt
 import Types
 
+import System.Directory
+
 main :: IO ()
 main = do
     history <- initialHistory
     print history
-    repl (history, WS initStore [])
+    currentDirectory <- getCurrentDirectory
+    print currentDirectory
+    repl (history, WS initStore [] currentDirectory)
     where
         initialHistory :: IO HistoryTrie
         initialHistory = do

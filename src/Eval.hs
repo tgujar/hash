@@ -39,20 +39,20 @@ getScope _ stor = last stor
 
 pushScope :: (MonadWhile m) => m ()
 pushScope  = do
-  WS s log <- get 
-  put (WS (initScope : s) log)
+  WS s log path <- get 
+  put (WS (initScope : s) log path)
 
 popScope :: (MonadWhile m) => m ()
 popScope  = do
-  WS s log <- get
-  put (WS (tail s) log)
+  WS s log path <- get
+  put (WS (tail s) log path)
 
 ----------------------------------------------------------------------------------------------
 -- | `readVar x` returns the value of the variable `x` in the "current store"
 ----------------------------------------------------------------------------------------------
 readVar :: (MonadWhile m) => Variable -> m Value
 readVar x = do
-  WS s _ <- get
+  WS s _ _ <- get
   case stackLookUp x s of
     Just v  -> return v
     Nothing -> throwError $ error $ "Variable " ++ show x ++ " not found"
@@ -62,19 +62,19 @@ readVar x = do
 ----------------------------------------------------------------------------------------------
 writeVar :: (MonadState WState m) => RefScope -> Variable -> Value -> m ()
 writeVar scope x v = do
-  WS s log <- get
+  WS s log path <- get
   let s' = M.insert x v (getScope scope s)
   case scope of
-    Local -> put (WS (s':tail s) log)
-    _ -> put (WS (init s ++ [s']) log)
+    Local -> put (WS (s':tail s) log path)
+    _ -> put (WS (init s ++ [s']) log path)
 
 ----------------------------------------------------------------------------------------------
 -- | `printString msg` adds the message `msg` to the output log
 ----------------------------------------------------------------------------------------------
 printString :: (MonadState WState m) => String -> m ()
 printString msg = do
-  WS s log <- get
-  put (WS s (msg:log))
+  WS s log path <- get
+  put (WS s (msg:log) path)
 
 
 -- TODO complete prefix operations
@@ -217,7 +217,7 @@ type Exec = (StateT WState (ExceptT Value IO))
 -- --------------------------------------------------------------------------
 
 -- Returns IO True if the operations succeeded IO False otherwise
-runExec :: Exec a -> WState  -> IO (Bool, WState)
+runExec :: Exec a -> WState -> IO (Bool, WState)
 runExec act s =  do
     r <- runExceptT (runStateT act s)
     case r of
@@ -235,7 +235,7 @@ runCmd str state = do
     Left err   -> do {print err; return (False, state)}
     Right stmt -> runExec (evalS stmt) state
 
--- >>> runCmd "echo 1+1" (WS initStore [])
+-- >>> runCmd "echo 1+1" (WS initStore [] "")
 -- "2"
 -- True
 --
@@ -246,7 +246,7 @@ runFile s = do
   p <- parseFromFile P.stmtParser s
   case p of
     Left err   -> print err
-    Right stmt -> do {runExec (evalS stmt) (WS initStore []); return ()}
+    Right stmt -> do {runExec (evalS stmt) (WS initStore [] ""); return ()}
 
 
 -- function to debug parsing

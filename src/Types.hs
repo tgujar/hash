@@ -91,8 +91,9 @@ data Statement
 
 data WState = WS 
   { wStore :: Store -- ^ store mapping Variables to Values 
-  , wLog   :: Log   -- ^ list of strings printed during execution  
-  } 
+  , wLog   :: Log   -- ^ list of strings printed during execution
+  , path   :: FilePath -- the current path that the interpreter is running in
+  }
 
 -- | A `Log` is the list of messages printed out during execution
 type Log      = [String]
