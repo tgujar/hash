@@ -344,4 +344,4 @@ runCmdCheckStore cmd initialState (WS expectedStore expectedLog expectedPath) = 
 -- True
 --
 
--- >>> runCmdCheckStore ""
+-- >>> runCmdCheckStore "hash \"test/test.hash\"" (WS initStore [] "") (WS [M.fromList []] [] "")
