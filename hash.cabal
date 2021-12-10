@@ -25,10 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-      Eval
-      Lang
       ConsolePrompt
+      Eval
       History
+      Lang
       Lib
       Parse
       ShEnv
