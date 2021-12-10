@@ -25,10 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-      Eval
-      Lang
       ConsolePrompt
+      Eval
       History
+      Lang
       Lib
       Parse
       ShEnv
@@ -43,6 +43,7 @@ library
     , bytestring >=0.10
     , bytestring-trie >=0.2.6
     , containers
+    , directory
     , haskeline >=0.8.2
     , mtl
     , parsec
@@ -64,6 +65,7 @@ executable hash-exe
     , bytestring >=0.10
     , bytestring-trie >=0.2.6
     , containers
+    , directory
     , hash
     , haskeline >=0.8.2
     , mtl
@@ -87,6 +89,7 @@ test-suite hash-test
     , bytestring >=0.10
     , bytestring-trie >=0.2.6
     , containers
+    , directory
     , hash
     , haskeline >=0.8.2
     , mtl

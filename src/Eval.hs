@@ -4,7 +4,8 @@
 
 module Eval where
 
-import qualified Data.Map as Map
+import qualified Data.Map as M
+import Data.List as L
 import           Control.Monad.State
 import           Control.Monad.Except
 import           Control.Monad.Identity
@@ -12,10 +13,8 @@ import           Types
 import Data.Either
 import Text.Parsec.String
 import Parse as P
-import Data.Map
 import System.Process (callProcess)
 import Control.Exception
-import Control.Arrow (Arrow(first))
 
 
 -- ----------------------------------------------------------------------------------------------
@@ -25,32 +24,57 @@ import Control.Arrow (Arrow(first))
 -- ----------------------------------------------------------------------------------------------
 type MonadWhile m = (MonadIO m, MonadState WState m, MonadError Value m)
 
+-- This returns the value of the variable from the nearest scope or parent scope
+stackLookUp :: Variable -> Store -> Maybe Value
+stackLookUp v [] = Nothing
+stackLookUp v [m] =  M.lookup v m
+stackLookUp v m = case v' of
+                    Nothing -> stackLookUp v (tail m)
+                    Just value -> v'
+  where v' = M.lookup v (head m)
+
+getScope :: RefScope -> Store -> ScopeVars
+getScope Local stor  = head stor
+getScope _ stor = last stor
+
+pushScope :: (MonadWhile m) => m ()
+pushScope  = do
+  WS s log path <- get 
+  put (WS (initScope : s) log path)
+
+popScope :: (MonadWhile m) => m ()
+popScope  = do
+  WS s log path <- get
+  put (WS (tail s) log path)
+
 ----------------------------------------------------------------------------------------------
 -- | `readVar x` returns the value of the variable `x` in the "current store"
 ----------------------------------------------------------------------------------------------
 readVar :: (MonadWhile m) => Variable -> m Value
 readVar x = do
-  WS s _ <- get
-  case Map.lookup x s of
+  WS s _ _ <- get
+  case stackLookUp x s of
     Just v  -> return v
     Nothing -> throwError $ error $ "Variable " ++ show x ++ " not found"
 
 ----------------------------------------------------------------------------------------------
 -- | `writeVar x v` updates the value of `x` in the store to `v`
 ----------------------------------------------------------------------------------------------
-writeVar :: (MonadState WState m) => Variable -> Value -> m ()
-writeVar x v = do
-  WS s log <- get
-  let s' = Map.insert x v s
-  put (WS s' log)
+writeVar :: (MonadState WState m) => RefScope -> Variable -> Value -> m ()
+writeVar scope x v = do
+  WS s log path <- get
+  let s' = M.insert x v (getScope scope s)
+  case scope of
+    Local -> put (WS (s':tail s) log path)
+    _ -> put (WS (init s ++ [s']) log path)
 
 ----------------------------------------------------------------------------------------------
 -- | `printString msg` adds the message `msg` to the output log
 ----------------------------------------------------------------------------------------------
 printString :: (MonadState WState m) => String -> m ()
 printString msg = do
-  WS s log <- get
-  put (WS s (msg:log))
+  WS s log path <- get
+  put (WS s (msg:log) path)
 
 
 -- TODO complete prefix operations
@@ -96,24 +120,31 @@ semantics Le (NumVal n1) (NumVal n2) = return $ BoolVal ((getRL n1) < (getRL n2)
 semantics Le (StrVal n1) (StrVal n2) = return $ BoolVal (n1 <= n2)
 semantics _ _ _ = throwError (StrVal "Types don't match")
 
--- TO DO: FUnctions and blocks arent being evaluated
+
+-- isScopeFlag :: RefScope -> Bool
+-- isScopeFlag f = case f of
+--                     (Scope _) -> True
+--                     _ -> False
+
+-- TO DO: Functions and blocks arent being evaluated
 evalS :: (MonadWhile m) => Statement -> m ()
-evalS (Assign v _ e) = do
+evalS (Assign v f e) = do
   val <- eval e
-  writeVar v val
+  writeVar f v val
   return ()
 
 evalS (If e s1 s2) = do
   val <- eval e
   case val of
-    (BoolVal True) -> evalS s1
-    (BoolVal False) -> evalS s2
+    (BoolVal True) -> do{pushScope; evalS s1; popScope}
+    (BoolVal False) -> do{pushScope; evalS s2; popScope}
     _ -> throwError (StrVal "Type error")
+
 
 evalS (While e s) = do
   val <- eval e
   case val of
-    (BoolVal True) -> do {evalS s; evalS (While e s)}
+    (BoolVal True) -> do {pushScope; evalS s; evalS (While e s); popScope}
     (BoolVal False) -> return ()
     _               -> throwError (StrVal "Type error")
 
@@ -128,9 +159,38 @@ evalS (Print e) = do
   liftIO $ print (show val)
   printString $ show val
 
+-- evalS (Error e) = do
+--   val <- eval e
+--   throwError val
+
 evalS (External cmd args) = do
   liftIO $ helper cmd args
   return ()
+
+evalS (Block s1) = do
+  pushScope
+  evalS s1
+  popScope
+
+
+
+
+-- setFunction :: (MonadWhile m) => RefScope -> Variable -> m ()
+-- setFunction sc v = do
+--   val <- readVar' sc v
+--   liftIO $ print (show val)
+--   printString $ show val
+
+-- setFunction sc Erase v = do
+--   WS s log <- get
+--   let s' = M.delete v (getScope sc s)
+--   case sc of
+--     Local -> put (WS (s':tail s) log)
+--     _ -> put (WS (init s ++ [s']) log)
+  
+
+
+
 
 helper :: FilePath -> [String] -> IO ()
 helper cmd args= do
@@ -157,17 +217,28 @@ type Exec = (StateT WState (ExceptT Value IO))
 -- --------------------------------------------------------------------------
 
 -- Returns IO True if the operations succeeded IO False otherwise
-runExec :: Exec a -> WState  -> IO Bool
+runExec :: Exec a -> WState -> IO (Bool, WState)
 runExec act s =  do
     r <- runExceptT (runStateT act s)
     case r of
-      Left  v       -> do {print $ "Error:" ++ show v; return False}
-      Right (a, s') -> return True
+      Left  v       -> do {print $ "Error:" ++ show v; return (False, s)}
+      Right (a, s') -> return (True, s')
 
 leftMaybe :: Either a b -> Maybe a
 leftMaybe (Left v)  = Just v
 leftMaybe (Right _) = Nothing
 
+runCmd :: String -> WState -> IO (Bool, WState)
+runCmd str state = do
+  p <- parseFromStringIO P.stmtParser str
+  case p of
+    Left err   -> do {print err; return (False, state)}
+    Right stmt -> runExec (evalS stmt) state
+
+-- >>> runCmd "echo 1+1" (WS initStore [] "")
+-- "2"
+-- True
+--
 
 -- Run a Hash script
 runFile :: FilePath -> IO ()
@@ -175,7 +246,7 @@ runFile s = do
   p <- parseFromFile P.stmtParser s
   case p of
     Left err   -> print err
-    Right stmt -> do {runExec (evalS stmt) (WS initStore []); return ()}
+    Right stmt -> do {runExec (evalS stmt) (WS initStore [] ""); return ()}
 
 
 -- function to debug parsing
@@ -185,22 +256,199 @@ printParsed s = do
   print p
 
 -- >>> printParsed "test/test.hash"
--- Right (Sequence (Assign "X" [Scope 'U'] (Val 10)) (Sequence (Assign "Y" [Scope 'U'] (Val 3)) (Sequence (Assign "Z" [Scope 'U'] (Val 0)) (While (Op Gt (Var "X") (Val 0)) (Sequence (Print (Val "Hello world")) (Sequence (External "ls" []) (Assign "X" [Scope 'U'] (Op Plus (Var "X") (Val "a")))))))))
+-- Right (Sequence (Assign "X" [Scope 'U'] (Val 10)) (Sequence (Assign "Y" [Scope 'U'] (Val 3)) (Sequence (Assign "Z" [Scope 'U'] (Val 0)) (While (Op Gt (Var "X") (Val 0)) (Sequence (Print (Val "Hello world")) (Sequence (External "ls" ["-la"]) (Assign "X" [Scope 'U'] (Op Minus (Var "X") (Val 1)))))))))
 --
 
 -- >>> runFile "test/test.hash"
 -- "\"Hello world\""
--- ChangeLog.md
--- LICENSE
--- README.md
--- Setup.hs
--- app
--- hash.cabal
--- package.yaml
--- src
--- stack.yaml
--- stack.yaml.lock
--- test
--- "Error:\"Types don't match\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "\"Hello world\""
+-- total 100
+-- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
+-- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
+-- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
+-- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
+-- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
+-- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
+-- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
+-- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
+-- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
+-- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
+-- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
+-- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
+-- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
+-- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
+-- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 --
 
