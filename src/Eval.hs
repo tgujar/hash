@@ -161,23 +161,22 @@ type Exec = (StateT WState (ExceptT Value IO))
 -- --------------------------------------------------------------------------
 
 -- Returns IO True if the operations succeeded IO False otherwise
-runExec :: Exec a -> WState  -> IO Bool
+runExec :: Exec a -> WState  -> IO (Bool, WState)
 runExec act s =  do
     r <- runExceptT (runStateT act s)
     case r of
-      Left  v       -> do {print $ "Error:" ++ show v; return False}
-      Right (a, s') -> return True
+      Left  v       -> do {print $ "Error:" ++ show v; return (False, s)}
+      Right (a, s') -> return (True, s')
 
 leftMaybe :: Either a b -> Maybe a
 leftMaybe (Left v)  = Just v
 leftMaybe (Right _) = Nothing
 
-
-runCmd :: String -> WState -> IO Bool
+runCmd :: String -> WState -> IO (Bool, WState)
 runCmd str state = do
   p <- parseFromStringIO P.stmtParser str
   case p of
-    Left err   -> do {print err; return False}
+    Left err   -> do {print err; return (False, state)}
     Right stmt -> runExec (evalS stmt) state
 
 -- >>> runCmd "echo 1+1" (WS initStore [])
