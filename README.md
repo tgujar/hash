@@ -58,34 +58,34 @@ We divided the project into four main parts: Parser, Evaluator, History, and the
 
 * History
     - Core Design
+    
+        I knew early on that I wanted the history to be represented as a trie, so that querying for matches given a prefix would be efficient.
+        Thus, I leveraged the Data.Trie library and built my query and upsert functions on top of it.
 
-I knew early on that I wanted the history to be represented as a trie, so that querying for matches given a prefix would be efficient.
-Thus, I leveraged the Data.Trie library and built my query and upsert functions on top of it.
+        To query the history structure, one provides a prefix and gets a list of matches back, sorted by frequency.
 
-To query the history structure, one provides a prefix and gets a list of matches back, sorted by frequency.
-
-To update the history, one provides a string to be added in with an initial frequency count of 1. If the string already exists, then its count is just incremented by 1 instead.
+        To update the history, one provides a string to be added in with an initial frequency count of 1. If the string already exists, then its count is just incremented by 1 instead.
 
     - Persistence
 
-History is persisted as a file, where each line records one of the user's inputs.
-On startup, this file is read into the application and serves as the initial history.
-On exit, the final history is written out into this file.
+        History is persisted as a file, where each line records one of the user's inputs.
+        On startup, this file is read into the application and serves as the initial history.
+        On exit, the final history is written out into this file.
 
-This logic was handled by the Haskeline library.
+        This logic was handled by the Haskeline library.
 
     - User Interface
 
-I was not certain of how I wanted the user to actually be able to request the autocomplete. Tab-based completion tends to be token-based in shells, rather than line-based.
-However, in the interest of time, I decided to leverage Haskeline's tab completion functionality and complete only whole lines at once instead.
+        I was not certain of how I wanted the user to actually be able to request the autocomplete. Tab-based completion tends to be token-based in shells, rather than line-based.
+        However, in the interest of time, I decided to leverage Haskeline's tab completion functionality and complete only whole lines at once instead.
 
 * REPL
 
-Haskeline, out of the box, provides a minimal REPL without the E (RPL?). Thus, all we had to do was take the input string and feed it into the evaluator and proceed from there.
+    Haskeline, out of the box, provides a minimal REPL without the E (RPL?). Thus, all we had to do was take the input string and feed it into the evaluator and proceed from there.
 
-The main design decision here was what state to pass between iterations and how. The History Trie obviously had to be passed between iterations explicitly; the default history functionality of Haskeline is just a log in list form. Then, state for the evaluator had to also be passed around. Together, these formed a neat little tuple of state data.
+    The main design decision here was what state to pass between iterations and how. The History Trie obviously had to be passed between iterations explicitly; the default history functionality of Haskeline is just a log in list form. Then, state for the evaluator had to also be passed around. Together, these formed a neat little tuple of state data.
 
-One of the things that Haskeline does by default is the automatic adding of user input to its internal history log. I had to turn this off and add to the history explicitly because we didn't want to save invalid inputs.
+    One of the things that Haskeline does by default is the automatic adding of user input to its internal history log. I had to turn this off and add to the history explicitly because we didn't want to save invalid inputs.
 
 ## Challenges
 * See Richard's report below for his thoughts
