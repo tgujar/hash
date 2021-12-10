@@ -117,3 +117,27 @@ The main challenges, other than procrastination, that I faced in this process we
 * Learning syntax, especially for monad transformers, was challenging. This was just something that got easier with time.
 * Integrating the evaluator with the REPL was difficult since the evaluator interface was not set in stone until very late. I wouldn't say this was "solved," per se; rather, it solved itself once the design crystallized.
 * Devising a way to test IO output was very confusing. In the end, I settled on having a print out of "all passed" or something along those lines, so that at least we didn't have to click "run in GHCI" a bunch of times.
+
+
+## (Late) Milestone Report (Chi-Cheng)
+
+* Week of 11/19
+    - I tried to figure out what we would like to have in our program and checked different libraries.
+* Week of 11/26
+    - I decided to make our program able to run binary executable files
+    - I searched for specific libraries that can help us reach the goal and then found a library called Turle.
+* Week of 12/3
+    - I checked the functions supported by Turtle and learned its syntax.
+* Week of 12/10
+    - I discussed with Tanmay and David to see if Turtle can be embedded in to the parser and the evaluator.
+    - I read the code about the parser and the evaluator and came up with a method to utilize the Turtle library.
+    - I wrote some psuedo codes and comments that Tanmay and David can follow and modify their parts.
+    - I prepared the codes to utilize the Turtle library after the parser and evaluator is done.
+    - Tanmay and David found another library that is more compatible with his implementation, so the Turtle library is eventually not used.
+
+In conclusion, my work is to study how haskell can run binary executable files. Therefore, I checked different libraries and decided to use the Turtle library.
+However, I need the help with the parser and the evaluator to run the Turtle library, but it seemed that it couldn't be easily embedded into the codes.
+Thus, I decided to design the implementation and write the psuedo codes for my teammates, so they would know what to do.
+
+Eventually, even though I figured out how the library could be utilized, my teammates found another way that required less work and decided not to use Turtle.
+I think the main challange for me was to find out the way that helped my teammates work less, and I didn't do a great job. Maybe I should have communicated and discussed more about the details with my teammates, so we would have saved more time and also avoid repetitive work.
