@@ -60,18 +60,10 @@ repl initial = flip evalStateT initial $ runInputT historySettings loop
                     -- strip ending whitespace on input
                     let
                         cleanedInput = dropWhileEnd isSpace input
-                    -- (_, st@(WS _ _ path)) <- lift get
-                    -- outputStrLn $ "Input was: " ++ input-- ++ "; current directory is " ++ path
-                    (res, st') <- liftIO (runCmd cleanedInput st) -- runCmd and runFile are parallel functions; ideally we have something that can funnel the call to the right place
-                    outputStrLn $ (show res)
+                    (res, st') <- liftIO (runCmd cleanedInput st)
+                    outputStrLn $ show res
                     Control.Monad.when res $
                         do
                             lift $ modify (\(history, _) -> (updateHistory history cleanedInput, st')) -- update history trie and state store
                             modifyHistory (addHistory cleanedInput)
                     loop
-
--- need to strip whitespace from the ends of input; otherwise we get weird double entries
--- e.g. Data.Trie.fromList [("gains",1),("gains ",1),("ls",1),("quit",6),("science",2),("sciencetest",1),("sciencetest ",1),("test",2),("test2",1),("this is a test",1)]
--- actually hm this seems like it's kind of a Haskeline problem
--- because it gets written out to the file with the extra space on the end
--- I will ignore this for now
