@@ -90,6 +90,7 @@ stmtParser = try blockP
     <|> try whileP 
     <|> try skipP 
     <|> try echoP 
+    <|> try hashFileP
     <|> externP
 
 -- Statement Type parsers
@@ -124,6 +125,10 @@ externP = do
 
 -- >>> parseFromString stmtParser "set -l $z $x+$y ; set -l $z $x+$y"
 -- Right (Sequence (Assign "z" [Scope 'l'] (Op Plus (Var "x") (Var "y"))) (Assign "z" [Scope 'l'] (Op Plus (Var "x") (Var "y"))))
+--
+
+-- >>> parseFromString stmtParser "hash test.hash"
+-- Right (HashFile "test.hash")
 --
 
 -- syntax for assignments is same as https://fishshell.com/docs/current/cmds/set.html?highlight=set
@@ -204,11 +209,16 @@ so that the lang could support newlines as well.
 --}
 sequenceP :: Parser H.Statement
 sequenceP = do
-    s1 <- try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> externP
+    s1 <- try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> try hashFileP <|> externP
     P.lexeme lexer (char ';')
     s2 <- stmtParser
     optional $ P.lexeme lexer (char ';')
     return $ H.Sequence s1 s2
+
+hashFileP :: Parser H.Statement
+hashFileP = do
+    _ <- P.lexeme lexer (string "hash")
+    H.HashFile <$> P.stringLiteral lexer
 
 
 parseFromStringIO :: Parser a -> String -> IO (Either ParseError a)
