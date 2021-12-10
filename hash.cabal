@@ -25,13 +25,25 @@ source-repository head
 
 library
   exposed-modules:
+      ConsolePrompt
+      History
       Lib
+      Types
   other-modules:
       Paths_hash
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
+    , bytestring >=0.10
+    , bytestring-trie >=0.2.6
+    , containers
+    , haskeline >=0.8.2
+    , mtl
+    , parsec
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.2
   default-language: Haskell2010
 
 executable hash-exe
@@ -42,8 +54,17 @@ executable hash-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
+    , bytestring >=0.10
+    , bytestring-trie >=0.2.6
+    , containers
     , hash
+    , haskeline >=0.8.2
+    , mtl
+    , parsec
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.2
   default-language: Haskell2010
 
 test-suite hash-test
@@ -55,6 +76,15 @@ test-suite hash-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
+    , bytestring >=0.10
+    , bytestring-trie >=0.2.6
+    , containers
     , hash
+    , haskeline >=0.8.2
+    , mtl
+    , parsec
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.2
   default-language: Haskell2010

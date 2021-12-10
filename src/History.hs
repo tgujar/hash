@@ -77,8 +77,6 @@ prop_upsert_vals = forAll (listOf arbitraryPrintableString) (\strings ->
 
 -- HistoryTrie upsert frequency values should be correct when compared to a frequency map
 
-
-
 -- prop_upsert_freqs :: Property
 -- prop_upsert_freqs = forAll (listOf arbitraryPrintableString) (\strings ->
 --     let
