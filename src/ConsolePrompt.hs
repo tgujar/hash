@@ -7,17 +7,24 @@ import Control.Monad.IO.Class
 
 import Control.Monad.Trans.Class (lift)
 
-import Control.Monad.Trans.State (StateT, evalStateT, get, modify)
+import Control.Monad.Trans.State (StateT (runStateT), evalStateT, get, modify)
 
 import Data.Trie
+
+import Eval
+import System.Console.Haskeline.History (addHistory)
+import Data.List (dropWhileEnd)
+import Data.Char (isSpace)
 
 -- https://hackage.haskell.org/package/haskeline-0.8.2/docs/System-Console-Haskeline.html
 historySettings :: Settings (StateT HistoryTrie IO)
 historySettings = Settings {
     complete = customComplete, -- why is it that when I change the completion function back to completeFilename, the history auto add starts working again?
     historyFile = Just historyPath,
-    autoAddHistory = True
+    autoAddHistory = False -- should figure out how to turn this off and still make it work -> we only want to add successful commands to the history
 }
+-- autoAddHistory: ^ If 'True', each nonblank line returned by
+-- @getInputLine@ will be automatically added to the history.
 
 historyPath = ".history"
 
@@ -39,10 +46,18 @@ repl initialHistory = flip evalStateT initialHistory $ runInputT historySettings
             minput <- getInputLine "% "
             case minput of
                 Nothing -> return ()
-                Just "quit" -> outputStrLn "**Exited**"
+                Just "quit" ->
+                    do
+                        modifyHistory (addHistory "quit")
+                        outputStrLn "**Exited**"
                 Just input -> do
-                    outputStrLn $ "Input was: " ++ input
-                    lift $ modify (`updateHistory` input)
+                    outputStrLn $ "Input was: " ++ input ++ ";"
+                    -- strip ending whitespace on input
+                    let
+                        cleanedInput = dropWhileEnd isSpace input
+                    liftIO (runFile cleanedInput)
+                    lift $ modify (`updateHistory` cleanedInput)
+                    modifyHistory (addHistory cleanedInput)
                     loop
 
 -- need to strip whitespace from the ends of input; otherwise we get weird double entries
