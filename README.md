@@ -37,6 +37,10 @@ We define the following milestones for the project:
 ## Library Usage/ Library References
 * [bytestring-trie](https://hackage.haskell.org/package/bytestring-trie)
 * [haskeline](https://hackage.haskell.org/package/haskeline)
+* [Parsec](https://hackage.haskell.org/package/parsec-3.1.15.0/docs/Text-Parsec.html)
+* [System.Process](https://hackage.haskell.org/package/process-1.6.13.2/docs/System-Process.html)
+* [System.Directory](https://hackage.haskell.org/package/directory-1.3.7.0/docs/System-Directory.html)
+* [mtl](https://hackage.haskell.org/package/mtl)
 
 ## Reproduction
 * [stack](https://docs.haskellstack.org/en/stable/README/)
