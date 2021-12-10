@@ -58,6 +58,7 @@ We divided the project into four main parts: Parser, Evaluator, History, and the
 
 * History
 - Core Design
+
 I knew early on that I wanted the history to be represented as a trie, so that querying for matches given a prefix would be efficient.
 Thus, I leveraged the Data.Trie library and built my query and upsert functions on top of it.
 
@@ -66,6 +67,7 @@ To query the history structure, one provides a prefix and gets a list of matches
 To update the history, one provides a string to be added in with an initial frequency count of 1. If the string already exists, then its count is just incremented by 1 instead.
 
 - Persistence
+
 History is persisted as a file, where each line records one of the user's inputs.
 On startup, this file is read into the application and serves as the initial history.
 On exit, the final history is written out into this file.
@@ -73,10 +75,12 @@ On exit, the final history is written out into this file.
 This logic was handled by the Haskeline library.
 
 - User Interface
+
 I was not certain of how I wanted the user to actually be able to request the autocomplete. Tab-based completion tends to be token-based in shells, rather than line-based.
 However, in the interest of time, I decided to leverage Haskeline's tab completion functionality and complete only whole lines at once instead.
 
 * REPL
+
 Haskeline, out of the box, provides a minimal REPL without the E (RPL?). Thus, all we had to do was take the input string and feed it into the evaluator and proceed from there.
 
 The main design decision here was what state to pass between iterations and how. The History Trie obviously had to be passed between iterations explicitly; the default history functionality of Haskeline is just a log in list form. Then, state for the evaluator had to also be passed around. Together, these formed a neat little tuple of state data.
@@ -106,6 +110,8 @@ In summary, the scope of my work included the history-based autocomplete as well
 Throughout the past month, I did not properly account for the sudden spike in workload toward the end of the quarter.
 However, because Haskeline is an amazing library, I was able to get a basic REPL working in short order, thus giving us some semblance of a shell.
 From there, I was able to leverage monad transformers to integrate my history trie and other state pieces from the evaluator portion of the project.
+
+However, due to time constraints, we had to cut many fluff features from our shell. However, I still was able to deliver a functioning autocomplete and REPL.
 
 The main challenges, other than procrastination, that I faced in this process were three-fold:
 * Learning syntax, especially for monad transformers, was challenging. This was just something that got easier with time.
