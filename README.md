@@ -34,11 +34,30 @@ We define the following milestones for the project:
     - More testing.
     - Presentation prep.
 
+## Milestone Report (Richard)
+
+* Week of 11/19
+    - I spent the first week or so not doing much of anything.
+* Week of 11/26
+    - I decided to use a Trie as the backing data structure for tracking history.
+    - I found the Data.Trie library which suited my needs. From there, it was a matter of adding upsert and query functions.
+* Week of 12/3
+    - Mostly studied for finals. Thought about how to actually set up the interpreter loop and call my history functions.
+* Week of 12/10
+    - Found the Haskeline library which handles most of the boilerplate of getting a REPL going.
+    - Plugged my history functions into Haskeline's system for tab-triggered auto-complete.
+    - Added some property tests for the history trie.
+    - Integrated history and parse-eval pieces together into the REPL.
+
+
+
 ## Library Usage/ Library References
 * [brick](https://github.com/jtdaugherty/brick/)
 * [shellmet](https://hackage.haskell.org/package/shellmet)
 * [coquina](https://hackage.haskell.org/package/coquina)
 * [procex](https://hackage.haskell.org/package/procex)
+* [bytestring-trie](https://hackage.haskell.org/package/bytestring-trie)
+* [haskeline](https://hackage.haskell.org/package/haskeline)
 
 ## Reproduction
 * [cabal](https://www.haskell.org/cabal/) or [stack](https://docs.haskellstack.org/en/stable/README/)
