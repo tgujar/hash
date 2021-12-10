@@ -39,7 +39,7 @@ getScope _ stor = last stor
 
 pushScope :: (MonadWhile m) => m ()
 pushScope  = do
-  WS s log path <- get 
+  WS s log path <- get
   put (WS (initScope : s) log path)
 
 popScope :: (MonadWhile m) => m ()
@@ -172,8 +172,20 @@ evalS (Block s1) = do
   evalS s1
   popScope
 
+evalS _ = undefined
 
+-- *** unit tests for evalS ***
+-- >>> do evalS Skip
+-- <interactive>:933:2-11: error:
+--     • Non type-variable argument in the constraint: MonadState WState m
+--       (Use FlexibleContexts to permit this)
+--     • When checking the inferred type
+--         it :: forall (m :: * -> *).
+--               (MonadIO m, MonadState WState m, MonadError Value m) =>
+--               m ()
+--
 
+-- IDK what this error is lmfao
 
 -- setFunction :: (MonadWhile m) => RefScope -> Variable -> m ()
 -- setFunction sc v = do
@@ -187,7 +199,7 @@ evalS (Block s1) = do
 --   case sc of
 --     Local -> put (WS (s':tail s) log)
 --     _ -> put (WS (init s ++ [s']) log)
-  
+
 
 
 
@@ -256,199 +268,69 @@ printParsed s = do
   print p
 
 -- >>> printParsed "test/test.hash"
--- Right (Sequence (Assign "X" [Scope 'U'] (Val 10)) (Sequence (Assign "Y" [Scope 'U'] (Val 3)) (Sequence (Assign "Z" [Scope 'U'] (Val 0)) (While (Op Gt (Var "X") (Val 0)) (Sequence (Print (Val "Hello world")) (Sequence (External "ls" ["-la"]) (Assign "X" [Scope 'U'] (Op Minus (Var "X") (Val 1)))))))))
+-- Right (Sequence (Assign "X" Local (Val 10)) (Sequence (Assign "Y" Local (Val 3)) (Sequence (Assign "Z" Local (Val 0)) (Sequence (While (Op Gt (Var "X") (Val 0)) (Sequence (Assign "Z" Local (Val 3)) (Sequence (Print (Val "Hello world")) (Assign "X" Global (Op Minus (Var "X") (Val 1)))))) (Print (Var "X"))))))
 --
 
 -- >>> runFile "test/test.hash"
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
 -- "\"Hello world\""
--- total 100
--- drwxrwxr-x  7 cse230 cse230  4096 Dec  9 19:31 .
--- drwxr-xr-x 25 cse230 cse230  4096 Dec  9 12:12 ..
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 app
--- -rw-rw-r--  1 cse230 cse230    44 Dec  1 17:24 ChangeLog.md
--- drwxrwxr-x  8 cse230 cse230  4096 Dec  9 19:30 .git
--- -rw-rw-r--  1 cse230 cse230   250 Dec  9 19:30 .gitignore
--- -rw-rw-r--  1 cse230 cse230  2063 Dec  9 19:30 hash.cabal
--- -rw-rw-r--  1 cse230 cse230   118 Dec  9 19:30 .history
--- -rw-rw-r--  1 cse230 cse230 35149 Dec  1 17:24 LICENSE
--- -rw-rw-r--  1 cse230 cse230  1462 Dec  9 19:30 package.yaml
--- -rw-rw-r--  1 cse230 cse230  2074 Dec  1 17:24 README.md
--- -rw-rw-r--  1 cse230 cse230    46 Dec  1 17:24 Setup.hs
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:30 src
--- drwxrwxr-x  5 cse230 cse230  4096 Dec  9 19:31 .stack-work
--- -rw-rw-r--  1 cse230 cse230  2250 Dec  9 19:30 stack.yaml
--- -rw-------  1 cse230 cse230  1003 Dec  9 19:31 stack.yaml.lock
--- drwxrwxr-x  2 cse230 cse230  4096 Dec  9 19:05 test
+-- "0"
 --
 
+-- *** unit tests for runCmd and runFile ***
+
+-- manually examine output of runCmd to see that it lists out the directory contents correctly
+-- >>> runCmd "ls" (WS initStore [] "")
+-- ChangeLog.md
+-- LICENSE
+-- README.md
+-- Setup.hs
+-- app
+-- dist
+-- hash.cabal
+-- package.yaml
+-- src
+-- stack.yaml
+-- stack.yaml.lock
+-- test
+--
+
+listsEq :: Eq a => [a] -> [a] -> Bool
+listsEq [] [] = True
+listsEq [] _ = False
+listsEq _ [] = False
+listsEq (x:xs) (y:ys) = (x == y) && listsEq xs ys
+
+-- runs the given command and checks that the resulting eval state is as expected
+runCmdCheckStore :: String -> WState -> WState -> IO Bool
+runCmdCheckStore cmd initialState (WS expectedStore expectedLog expectedPath) = do
+  (b, WS store log path) <- runCmd cmd initialState
+  let
+    -- res = listsEq store expectedStore && listsEq log expectedLog && (path == expectedPath)
+    res1 = listsEq store expectedStore
+    res2 = listsEq log expectedLog
+    res3 = path == expectedPath
+    res = res1 && res2 && res3
+  -- print res1
+  -- print res2
+  -- print res3
+  return res
+
+-- >>> runCmdCheckStore "set cat 5" (WS initStore [] "") (WS [M.fromList [("cat", NumVal (Left 5))]] [] "")
+-- True
+--
+
+-- >>> runCmdCheckStore "set cat 5; echo $cat" (WS initStore [] "") (WS [M.fromList [("cat", NumVal (Left 5))]] ["5"] "")
+-- "5"
+-- True
+--
+
+-- >>> runCmdCheckStore ""
