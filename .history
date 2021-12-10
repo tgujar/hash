@@ -1,3 +1,11 @@
+p
+if
+quit
+echo $cat
+echo cat
+set cat 5
+hash "test/test.hash"
+python3
 ls
 echo $cat
 set cat 3
