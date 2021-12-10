@@ -15,6 +15,8 @@ type Variable = String
 -- TO DO: Implement scoping
 -- Store should be a stack of Maps, where bottom of stack represents the global scope
 type Store    = Map.Map Variable Value
+type Command  = String
+type Args     = [String]
 
 
 data Value
@@ -65,6 +67,7 @@ data Statement
   | Function [Variable] Statement
   | Return   Expression
   | Block    Statement
+  | External Command Args
   deriving (Show)
 
 -- for error messages

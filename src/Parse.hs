@@ -87,7 +87,8 @@ stmtParser = try funcP
     <|> try whileP 
     <|> try skipP 
     <|> try echoP 
-    <|> returnP
+    <|> try returnP
+    <|> externP
 
 -- Statement Type parsers
 -- Functions have the following syntax
@@ -98,14 +99,20 @@ funtion (x, y, z, ...) {
 }
 --}
 
--- extendedParser :: Parser H.Statement
--- extendedParser = stmtParser <|> returnP
+externP :: Parser H.Statement
+externP = do
+    ext <- sepBy1 (many1 (alphaNum <|> oneOf "~/-.")) spaces
+    return $ H.External (head ext) (tail ext)
 
 funcP :: Parser H.Statement
 funcP = do
     _ <- P.reservedOp lexer "function"
     vars <- P.parens lexer $ P.commaSep lexer (P.identifier lexer)
     H.Function vars <$> stmtParser
+
+-- >>> parseFromString stmtParser "ls -la ~/tgujar"
+-- Right (External "ls" ["-la","~/tgujar"])
+--
 
 
 -- >>> parseFromString stmtParser "function (x,y,z) { set -l $z $x+$y ; return $z}"
@@ -186,7 +193,7 @@ so that the lang could support newlines as well.
 --}
 sequenceP :: Parser H.Statement
 sequenceP = do
-    s1 <- try funcP <|> try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> echoP
+    s1 <- try funcP <|> try assignP <|> try ifelseP <|> try whileP <|> try skipP <|> try echoP <|> try returnP <|> externP
     P.lexeme lexer (char ';')
     s2 <- stmtParser
     optional $ P.lexeme lexer (char ';')
