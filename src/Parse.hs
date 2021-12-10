@@ -204,18 +204,40 @@ sequenceP = do
 parseFromString :: Parser a -> String -> Either ParseError a
 parseFromString p = runParser p () "Error"
 
+-----------------------------------test for string parser-----------------------------------------------------
+-- >>> parseFromString exprParser "$cat"
+-- Right (Var "cat")
+--
 
---- >>> parseFromString exprParser "2+(3*4-3)/2"
---- Right (Op Plus (Val (NumVal (Left 2))) (Op Divide (Op Minus (Op Times (Val (NumVal (Left 3))) (Val (NumVal (Left 4)))) (Val (NumVal (Left 3)))) (Val (NumVal (Left 2)))))
----
+-- >>> parseFromString exprParser "\"cat\""
+-- Right (Val (StrVal "cat"))
+--
+
+-- >>> parseFromString exprParser "(123)=_*&^%$#@!'"
+-- Right (Val (NumVal (Left 123)))
+--
+
+-- >>> parseFromString exprParser "2+(3*4-3)/2"
+-- Right (Op Plus (Val (NumVal (Left 2))) (Op Divide (Op Minus (Op Times (Val (NumVal (Left 3))) (Val (NumVal (Left 4)))) (Val (NumVal (Left 3)))) (Val (NumVal (Left 2)))))
+--
+
+-- >>> parseFromString exprParser "28%5"
+-- Right (Op Divide (Val (NumVal (Left 28))) (Val (NumVal (Left 5))))
+--
 
 -- >>> parseFromString exprParser "not $cat"
 -- Right (PrefixOp Not (Var "cat"))
 --
 
+-- >>> parseFromString exprParser "not $cat and $dog"
+-- Right (Op And (PrefixOp Not (Var "cat")) (Var "dog"))
+--
 
+-- >>> parseFromString exprParser "$cat or $dog"
+-- Right (Op Or (Var "cat") (Var "dog"))
+--
 
------------------------------------test for prefix operator -------------------------------------------------
+-----------------------------------test for operator -------------------------------------------------
 -- >>> parseFromString exprParser "1.2 + 3.4"
 -- Right (Op Plus (Val (NumVal (Right 1.2))) (Val (NumVal (Right 3.4))))
 --
@@ -228,22 +250,40 @@ parseFromString p = runParser p () "Error"
 -- Right (Op Plus (Val (StrVal "cat")) (Val (StrVal "dog")))
 --
 
+-- >>> parseFromString exprParser "$cat + $dog"
+-- Right (Op Plus (Var "cat") (Var "dog"))
+--
+
+
 -- >>> parseFromString exprParser "1+2*3 >= 4"
 -- Right (Op Ge (Op Plus (Val (NumVal (Left 1))) (Op Times (Val (NumVal (Left 2))) (Val (NumVal (Left 3))))) (Val (NumVal (Left 4))))
 --
 
 
--------------------------------------------------------------------------------------------------------------
-
-
------------------------------------test for string parser-----------------------------------------------------
--- >>> parseFromString exprParser "\'hello\'"
--- Left "DUMMY" (line 1, column 1):
--- unexpected "'"
--- expecting number, identifier, literal string or "("
+-----------------------------------test for ifelse -------------------------------------------------
+-- >>> parseFromString stmtParser "if (1+2) { echo 1; echo 2; } else { echo 3; echo 4; }"
+-- Right (If (Op Plus (Val (NumVal (Left 1))) (Val (NumVal (Left 2)))) (Sequence (Print (Val (NumVal (Left 1)))) (Print (Val (NumVal (Left 2))))) (Sequence (Print (Val (NumVal (Left 3)))) (Print (Val (NumVal (Left 4))))))
 --
 
--- >>> parseFromString stringParser "(123)=_*&^%$#@!'"
--- Right (Val (StrVal "(123)=_*&^%$#@!"))
+-----------------------------------test for while -------------------------------------------------
+-- >>> parseFromString stmtParser "while (1+2) { echo 1; echo 2; }"
+-- Right (While (Op Plus (Val (NumVal (Left 1))) (Val (NumVal (Left 2)))) (Sequence (Print (Val (NumVal (Left 1)))) (Print (Val (NumVal (Left 2))))))
 --
 
+-----------------------------------test for echo -------------------------------------------------
+-- >>> parseFromString stmtParser "echo \"hello\""
+-- Right (Print (Val (StrVal "hello")))
+--
+
+-- >>> parseFromString stmtParser "echo \"hello\"; echo \"world\""
+-- Right (Sequence (Print (Val (StrVal "hello"))) (Print (Val (StrVal "world"))))
+--
+
+-- >>> parseFromString stmtParser "echo $cat"
+-- Right (Print (Var "cat"))
+--
+
+-----------------------------------test for skip -------------------------------------------------
+-- >>> parseFromString stmtParser "skip"
+-- Right Skip
+--
