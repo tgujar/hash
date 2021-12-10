@@ -15,6 +15,10 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.UTF8 as BLU
 import qualified Data.ByteString.UTF8 as BSU
 
+import qualified Data.Map as M
+
+import qualified Data.List as L
+
 import Control.Monad.State
 
 import Control.Monad.Identity
@@ -33,8 +37,9 @@ findMatches history input =
     let
         submap = Trie.submap (stringToByteString input) history
         matchesList = Trie.toList submap
+        raw = map (Data.Bifunctor.first BSU.toString) matchesList
     in
-        map (Data.Bifunctor.first BSU.toString) matchesList
+        L.sort raw
 
 updateHistory :: HistoryTrie -> String -> HistoryTrie
 updateHistory history input = insertWith (+) (stringToByteString input) 1 history
@@ -77,11 +82,18 @@ prop_upsert_vals = forAll (listOf arbitraryPrintableString) (\strings ->
 
 -- HistoryTrie upsert frequency values should be correct when compared to a frequency map
 
--- prop_upsert_freqs :: Property
--- prop_upsert_freqs = forAll (listOf arbitraryPrintableString) (\strings ->
---     let
---         freqMap = undefined
---         trie = fromStrings strings
---     in
---         undefined
---     )
+makeFreqMap :: [String] -> M.Map String Int
+makeFreqMap = foldl (\m s -> M.insertWith (+) s 1 m) M.empty
+
+prop_upsert_freqs :: Property
+prop_upsert_freqs = forAll (listOf arbitraryPrintableString) (\strings ->
+    let
+        freqMap = makeFreqMap strings
+        trie = fromStrings strings
+    in
+        all (\s -> snd (head (findMatches trie s)) == (freqMap M.! s)) strings
+    )
+
+-- >>> quickCheck prop_upsert_freqs
+-- +++ OK, passed 100 tests.
+--

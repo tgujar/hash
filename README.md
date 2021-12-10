@@ -47,6 +47,7 @@ We define the following milestones for the project:
     - Found the Haskeline library which handles most of the boilerplate of getting a REPL going.
     - Plugged my history functions into Haskeline's system for tab-triggered auto-complete.
     - Added some property tests for the history trie.
+    - Integrated history and parse-eval pieces together into the REPL.
 
 
 
